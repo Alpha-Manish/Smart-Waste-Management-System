@@ -11,8 +11,10 @@ const citizenMenuItems: MenuItem[] = [
 export function CitizenLayout() {
   return (
     <div className="min-h-screen bg-slate-50 flex">
-      {/* Sidebar Component with Citizen specific items */}
-      <Sidebar items={citizenMenuItems} />
+      <Sidebar 
+        items={citizenMenuItems} 
+        profile={{ name: 'Citizen', role: 'Resident', initials: 'CZ' }}
+      />
 
       {/* Main Content Area */}
       <main className="flex-1 md:ml-64 transition-all duration-300">

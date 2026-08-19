@@ -8,6 +8,9 @@ import { NotFound } from '../pages/NotFound';
 const LandingPage = lazy(() => import('../pages/LandingPage'));
 const CitizenDashboard = lazy(() => import('../pages/CitizenDashboard'));
 const AdminDashboard = lazy(() => import('../pages/AdminDashboard'));
+const ReportComplaint = lazy(() => import('../pages/ReportComplaint'));
+const MyComplaints = lazy(() => import('../pages/MyComplaints'));
+const ComplaintDetails = lazy(() => import('../pages/ComplaintDetails'));
 
 // Reusable loading fallback
 const PageLoader = () => (
@@ -38,7 +41,30 @@ export const AppRoutes = () => {
             </Suspense>
           ),
         },
-        // Note: Add '/citizen/report' and '/citizen/complaints' routes here in the future
+        {
+          path: 'report',
+          element: (
+            <Suspense fallback={<PageLoader />}>
+              <ReportComplaint />
+            </Suspense>
+          ),
+        },
+        {
+          path: 'complaints',
+          element: (
+            <Suspense fallback={<PageLoader />}>
+              <MyComplaints />
+            </Suspense>
+          ),
+        },
+        {
+          path: 'complaints/:id',
+          element: (
+            <Suspense fallback={<PageLoader />}>
+              <ComplaintDetails />
+            </Suspense>
+          ),
+        },
       ]
     },
     {

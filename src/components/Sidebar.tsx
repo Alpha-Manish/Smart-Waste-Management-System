@@ -28,6 +28,12 @@ export interface MenuItem {
   icon: React.ElementType;
 }
 
+export interface UserProfile {
+  name: string;
+  role: string;
+  initials: string;
+}
+
 const defaultAdminItems: MenuItem[] = [
   { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
   { name: 'Complaints', path: '/admin/complaints', icon: MessageSquareWarning },
@@ -38,7 +44,13 @@ const defaultAdminItems: MenuItem[] = [
   { name: 'SDG Reports', path: '/admin/sdg-reports', icon: Globe2 },
 ];
 
-export function Sidebar({ items = defaultAdminItems }: { items?: MenuItem[] }) {
+export function Sidebar({ 
+  items = defaultAdminItems,
+  profile = { name: 'Admin', role: 'System Manager', initials: 'AD' }
+}: { 
+  items?: MenuItem[],
+  profile?: UserProfile
+}) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
@@ -97,6 +109,7 @@ export function Sidebar({ items = defaultAdminItems }: { items?: MenuItem[] }) {
             <NavLink
               key={item.name}
               to={item.path}
+              end={item.path === '/admin' || item.path === '/citizen'}
               onClick={() => setIsMobileOpen(false)}
               className={({ isActive }) => cn(
                 "flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group relative",
@@ -149,11 +162,11 @@ export function Sidebar({ items = defaultAdminItems }: { items?: MenuItem[] }) {
           {!isCollapsed && (
             <div className="flex items-center gap-3 mt-4 px-3 md:hidden">
               <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center">
-                <span className="text-sm font-bold text-slate-600">AD</span>
+                <span className="text-sm font-bold text-slate-600">{profile.initials}</span>
               </div>
               <div className="flex flex-col">
-                <span className="text-sm font-bold text-slate-800">Admin</span>
-                <span className="text-xs text-slate-500">System Manager</span>
+                <span className="text-sm font-bold text-slate-800">{profile.name}</span>
+                <span className="text-xs text-slate-500">{profile.role}</span>
               </div>
             </div>
           )}
