@@ -1,6 +1,7 @@
 import { FileWarning, Clock, CheckCircle, Trash2, TrendingUp, Users, AlertTriangle, BatteryMedium, CheckCircle2 } from 'lucide-react';
 import { mockBins } from '../data/mockBins';
 import { getStatusFromPercentage } from '../components/BinStatus';
+import { Link } from 'react-router-dom';
 
 const adminStats = [
   {
@@ -175,11 +176,18 @@ export default function AdminDashboard() {
               <option>This Year</option>
             </select>
           </div>
-          <div className="flex-1 bg-slate-50 rounded-xl flex items-center justify-center border border-dashed border-slate-200">
-            <div className="text-center text-slate-400">
+          <div className="flex-1 bg-slate-50 rounded-xl flex flex-col items-center justify-center border border-dashed border-slate-200">
+            <div className="text-center text-slate-400 mb-4">
               <BarChart3 className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p className="font-medium">Chart Visualization Placeholder</p>
+              <p className="font-medium">Advanced Analytics Dashboard Available</p>
             </div>
+            <Link 
+              to="/admin/analytics" 
+              className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2 rounded-lg font-medium transition-colors shadow-sm flex items-center gap-2"
+            >
+              <TrendingUp className="w-4 h-4" />
+              View Full Analytics
+            </Link>
           </div>
         </div>
 

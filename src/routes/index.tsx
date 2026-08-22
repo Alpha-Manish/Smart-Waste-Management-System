@@ -15,6 +15,7 @@ const SmartBinMonitoring = lazy(() => import('../pages/SmartBinMonitoring'));
 const AddBin = lazy(() => import('../pages/AddBin'));
 const EditBin = lazy(() => import('../pages/EditBin'));
 const BinDetails = lazy(() => import('../pages/BinDetails'));
+const AnalyticsDashboard = lazy(() => import('../pages/AnalyticsDashboard'));
 
 // Reusable loading fallback
 const PageLoader = () => (
@@ -112,6 +113,14 @@ export const AppRoutes = () => {
           element: (
             <Suspense fallback={<PageLoader />}>
               <BinDetails />
+            </Suspense>
+          ),
+        },
+        {
+          path: 'analytics',
+          element: (
+            <Suspense fallback={<PageLoader />}>
+              <AnalyticsDashboard />
             </Suspense>
           ),
         },
