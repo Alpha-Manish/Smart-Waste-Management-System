@@ -11,6 +11,10 @@ const AdminDashboard = lazy(() => import('../pages/AdminDashboard'));
 const ReportComplaint = lazy(() => import('../pages/ReportComplaint'));
 const MyComplaints = lazy(() => import('../pages/MyComplaints'));
 const ComplaintDetails = lazy(() => import('../pages/ComplaintDetails'));
+const SmartBinMonitoring = lazy(() => import('../pages/SmartBinMonitoring'));
+const AddBin = lazy(() => import('../pages/AddBin'));
+const EditBin = lazy(() => import('../pages/EditBin'));
+const BinDetails = lazy(() => import('../pages/BinDetails'));
 
 // Reusable loading fallback
 const PageLoader = () => (
@@ -76,6 +80,38 @@ export const AppRoutes = () => {
           element: (
             <Suspense fallback={<PageLoader />}>
               <AdminDashboard />
+            </Suspense>
+          ),
+        },
+        {
+          path: 'bins',
+          element: (
+            <Suspense fallback={<PageLoader />}>
+              <SmartBinMonitoring />
+            </Suspense>
+          ),
+        },
+        {
+          path: 'bins/add',
+          element: (
+            <Suspense fallback={<PageLoader />}>
+              <AddBin />
+            </Suspense>
+          ),
+        },
+        {
+          path: 'bins/edit/:id',
+          element: (
+            <Suspense fallback={<PageLoader />}>
+              <EditBin />
+            </Suspense>
+          ),
+        },
+        {
+          path: 'bins/:id',
+          element: (
+            <Suspense fallback={<PageLoader />}>
+              <BinDetails />
             </Suspense>
           ),
         },

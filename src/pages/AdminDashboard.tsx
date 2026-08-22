@@ -1,4 +1,6 @@
-import { FileWarning, Clock, CheckCircle, Trash2, TrendingUp, Users } from 'lucide-react';
+import { FileWarning, Clock, CheckCircle, Trash2, TrendingUp, Users, AlertTriangle, BatteryMedium, CheckCircle2 } from 'lucide-react';
+import { mockBins } from '../data/mockBins';
+import { getStatusFromPercentage } from '../components/BinStatus';
 
 const adminStats = [
   {
@@ -40,6 +42,50 @@ const adminStats = [
 ];
 
 export default function AdminDashboard() {
+  const totalBins = mockBins.length;
+  const fullBins = mockBins.filter(b => getStatusFromPercentage(b.fillPercentage) === 'Full').length;
+  const almostFullBins = mockBins.filter(b => getStatusFromPercentage(b.fillPercentage) === 'Almost Full').length;
+  const emptyBins = mockBins.filter(b => getStatusFromPercentage(b.fillPercentage) === 'Empty').length;
+
+  const binStats = [
+    {
+      title: 'Total Smart Bins',
+      value: totalBins,
+      icon: Trash2,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50',
+      trend: 'Active tracking',
+      trendUp: true,
+    },
+    {
+      title: 'Full Bins',
+      value: fullBins,
+      icon: AlertTriangle,
+      color: 'text-red-600',
+      bgColor: 'bg-red-50',
+      trend: 'Needs collection',
+      trendUp: false,
+    },
+    {
+      title: 'Almost Full',
+      value: almostFullBins,
+      icon: BatteryMedium,
+      color: 'text-amber-600',
+      bgColor: 'bg-amber-50',
+      trend: 'Schedule soon',
+      trendUp: false,
+    },
+    {
+      title: 'Empty Bins',
+      value: emptyBins,
+      icon: CheckCircle2,
+      color: 'text-emerald-600',
+      bgColor: 'bg-emerald-50',
+      trend: 'Optimal state',
+      trendUp: true,
+    }
+  ];
+
   return (
     <div className="max-w-7xl mx-auto">
       <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
@@ -81,6 +127,41 @@ export default function AdminDashboard() {
             </div>
           );
         })}
+      </div>
+
+      {/* Bin Monitoring Stats Grid */}
+      <div className="mb-8">
+        <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+          <Trash2 className="w-6 h-6 text-teal-600" />
+          Live Bin Monitoring
+        </h2>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {binStats.map((stat, index) => {
+            const Icon = stat.icon;
+            return (
+              <div 
+                key={index} 
+                className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${stat.bgColor}`}>
+                    <Icon className={`w-6 h-6 ${stat.color}`} />
+                  </div>
+                  <span className="text-3xl font-black text-slate-800">{stat.value}</span>
+                </div>
+                
+                <div>
+                  <h3 className="text-slate-600 font-bold">{stat.title}</h3>
+                  <div className="mt-3">
+                    <span className={`inline-flex px-2.5 py-1 rounded-md text-xs font-semibold ${stat.trendUp ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+                      {stat.trend}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Interactive Map / Chart Placeholders */}
