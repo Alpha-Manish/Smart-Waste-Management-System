@@ -18,6 +18,8 @@ const BinDetails = lazy(() => import('../pages/BinDetails'));
 const AnalyticsDashboard = lazy(() => import('../pages/AnalyticsDashboard'));
 const AdminComplaints = lazy(() => import('../pages/AdminComplaints'));
 const AdminComplaintDetails = lazy(() => import('../pages/AdminComplaintDetails'));
+const AIPredictions = lazy(() => import('../pages/AIPredictions'));
+const PredictionDetails = lazy(() => import('../pages/PredictionDetails'));
 
 // Reusable loading fallback
 const PageLoader = () => (
@@ -123,6 +125,22 @@ export const AppRoutes = () => {
           element: (
             <Suspense fallback={<PageLoader />}>
               <AnalyticsDashboard />
+            </Suspense>
+          ),
+        },
+        {
+          path: 'predictions',
+          element: (
+            <Suspense fallback={<PageLoader />}>
+              <AIPredictions />
+            </Suspense>
+          ),
+        },
+        {
+          path: 'predictions/:id',
+          element: (
+            <Suspense fallback={<PageLoader />}>
+              <PredictionDetails />
             </Suspense>
           ),
         },
