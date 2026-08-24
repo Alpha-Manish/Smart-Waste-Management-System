@@ -41,7 +41,7 @@ const defaultAdminItems: MenuItem[] = [
   { name: 'Analytics', path: '/admin/analytics', icon: BarChart3 },
   { name: 'AI Prediction', path: '/admin/predictions', icon: BrainCircuit },
   { name: 'Route Optimization', path: '/admin/routes', icon: RouteIcon },
-  { name: 'SDG Reports', path: '/admin/sdg-reports', icon: Globe2 },
+  { name: 'SDG Reports', path: '/admin/sdg-report', icon: Globe2 },
 ];
 
 export function Sidebar({ 

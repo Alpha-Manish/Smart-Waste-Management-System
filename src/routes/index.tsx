@@ -20,6 +20,8 @@ const AdminComplaints = lazy(() => import('../pages/AdminComplaints'));
 const AdminComplaintDetails = lazy(() => import('../pages/AdminComplaintDetails'));
 const AIPredictions = lazy(() => import('../pages/AIPredictions'));
 const PredictionDetails = lazy(() => import('../pages/PredictionDetails'));
+const RouteOptimization = lazy(() => import('../pages/RouteOptimization'));
+const SDGReports = lazy(() => import('../pages/SDGReports'));
 
 // Reusable loading fallback
 const PageLoader = () => (
@@ -141,6 +143,22 @@ export const AppRoutes = () => {
           element: (
             <Suspense fallback={<PageLoader />}>
               <PredictionDetails />
+            </Suspense>
+          ),
+        },
+        {
+          path: 'routes',
+          element: (
+            <Suspense fallback={<PageLoader />}>
+              <RouteOptimization />
+            </Suspense>
+          ),
+        },
+        {
+          path: 'sdg-report',
+          element: (
+            <Suspense fallback={<PageLoader />}>
+              <SDGReports />
             </Suspense>
           ),
         },
