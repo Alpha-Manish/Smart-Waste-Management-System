@@ -99,10 +99,22 @@ export default function MyComplaints() {
               onClick={() => navigate(`/citizen/complaints/${complaint.id}`)}
               className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow group flex flex-col cursor-pointer"
             >
+              {complaint.imageUrl ? (
+                <div className="h-48 overflow-hidden relative">
+                  <img 
+                    src={complaint.imageUrl} 
+                    alt={complaint.title} 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute top-4 right-4">
+                    <StatusBadge status={complaint.status} />
+                  </div>
+                </div>
+              ) : null}
               <div className="p-5 border-b border-slate-100 flex-1">
                 <div className="flex justify-between items-start mb-4">
                   <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{complaint.id}</span>
-                  <StatusBadge status={complaint.status} />
+                  {!complaint.imageUrl && <StatusBadge status={complaint.status} />}
                 </div>
                 <h3 className="text-lg font-bold text-slate-900 mb-2 line-clamp-2 group-hover:text-teal-700 transition-colors">
                   {complaint.title}

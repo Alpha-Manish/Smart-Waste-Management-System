@@ -19,6 +19,29 @@ export default function ReportComplaint() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const file = e.dataTransfer.files[0];
+      setImage(file);
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -194,8 +217,16 @@ export default function ReportComplaint() {
                 <label className="block text-sm font-semibold text-slate-700">
                   Upload Image (Optional)
                 </label>
-                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 border-dashed rounded-xl hover:border-teal-500 hover:bg-teal-50/50 transition-colors bg-slate-50">
-                  <div className="space-y-1 text-center">
+                <div 
+                  className={cn(
+                    "mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-xl transition-colors",
+                    isDragging ? "border-teal-500 bg-teal-50/50" : "border-slate-300 hover:border-teal-500 hover:bg-teal-50/50 bg-slate-50"
+                  )}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
+                  <div className="space-y-1 text-center w-full">
                     {previewUrl ? (
                       <div className="relative inline-block">
                         <img src={previewUrl} alt="Preview" className="max-h-48 rounded-lg shadow-sm" />
@@ -214,27 +245,24 @@ export default function ReportComplaint() {
                         </button>
                       </div>
                     ) : (
-                      <>
+                      <label htmlFor="file-upload" className="flex flex-col items-center justify-center cursor-pointer w-full h-full">
                         <UploadCloud className="mx-auto h-12 w-12 text-slate-400" />
-                        <div className="flex text-sm text-slate-600 justify-center">
-                          <label
-                            htmlFor="file-upload"
-                            className="relative cursor-pointer bg-white rounded-md font-medium text-teal-600 hover:text-teal-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-teal-500 px-1"
-                          >
-                            <span>Upload a file</span>
-                            <input
-                              id="file-upload"
-                              name="file-upload"
-                              type="file"
-                              accept="image/*"
-                              className="sr-only"
-                              onChange={handleImageChange}
-                            />
-                          </label>
+                        <div className="flex text-sm text-slate-600 justify-center mt-2">
+                          <span className="relative bg-transparent rounded-md font-medium text-teal-600 hover:text-teal-500 px-1">
+                            Upload a file
+                          </span>
+                          <input
+                            id="file-upload"
+                            name="file-upload"
+                            type="file"
+                            accept="image/*"
+                            className="sr-only"
+                            onChange={handleImageChange}
+                          />
                           <p className="pl-1">or drag and drop</p>
                         </div>
-                        <p className="text-xs text-slate-500">PNG, JPG, GIF up to 10MB</p>
-                      </>
+                        <p className="text-xs text-slate-500 mt-1">PNG, JPG, GIF up to 10MB</p>
+                      </label>
                     )}
                   </div>
                 </div>

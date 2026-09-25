@@ -41,6 +41,7 @@ export const MOCK_COMPLAINTS: Complaint[] = [
     description: 'The regular garbage collection was scheduled for Tuesday, but the truck never came by our street. Several houses have bins waiting outside.',
     status: 'Pending',
     date: '2023-10-26T08:15:00Z',
+    imageUrl: 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&q=80&w=800',
     timeline: [
       { status: 'Pending', date: '2023-10-26T08:15:00Z', description: 'Complaint logged in the system.' }
     ]
@@ -68,6 +69,7 @@ export const MOCK_COMPLAINTS: Complaint[] = [
     description: 'The blue recycling bin at the corner of Oak and 5th has a broken lid and a crack in the side. Rainwater is getting in and ruining the recyclables.',
     status: 'Pending',
     date: '2023-10-27T11:20:00Z',
+    imageUrl: 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?auto=format&fit=crop&q=80&w=800',
     timeline: [
       { status: 'Pending', date: '2023-10-27T11:20:00Z', description: 'Damage report filed.' }
     ]
@@ -80,6 +82,7 @@ export const MOCK_COMPLAINTS: Complaint[] = [
     description: 'Garbage was collected but the recycling bin was left full. This is the second time this month.',
     status: 'Resolved',
     date: '2023-10-15T13:10:00Z',
+    imageUrl: 'https://images.unsplash.com/photo-1528323273322-d81458248d40?auto=format&fit=crop&q=80&w=800',
     timeline: [
       { status: 'Pending', date: '2023-10-15T13:10:00Z', description: 'Issue reported.' },
       { status: 'In Progress', date: '2023-10-16T09:00:00Z', description: 'Driver notified of missed pickup.' },
@@ -94,6 +97,7 @@ export const MOCK_COMPLAINTS: Complaint[] = [
     description: 'The commercial dumpsters behind the restaurant complex are emitting a severe foul odor and attracting pests. They appear to not have been emptied on schedule.',
     status: 'In Progress',
     date: '2023-10-25T16:40:00Z',
+    imageUrl: 'https://scontent.fraj3-2.fna.fbcdn.net/v/t39.99422-6/732152313_1698758621328195_3447765688007182579_n.png?stp=dst-jpg_tt6&cstp=mx900x1008&ctp=s900x1008&_nc_cat=108&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=833d8c&_nc_ohc=5HxuNkPHoO8Q7kNvwHeUqHU&_nc_oc=AdoGZIuMum1Dl3LigNG6QiXQ8TZvGj5beyrI8qJH_UU3M3kbBiUb6nQaZJTLratxmpU9tUR_D-67ClM8qHMG27FK&_nc_zt=14&_nc_ht=scontent.fraj3-2.fna&_nc_gid=M55i_wYbbPyXuWXLboY6SQ&_nc_ss=7b289&oh=00_AQLjgNzNYYvSbyCphsJGhWFy2MM1ZWiVMKLFzobgZtRChA&oe=6ABC76FD',
     timeline: [
       { status: 'Pending', date: '2023-10-25T16:40:00Z', description: 'Odor complaint logged.' },
       { status: 'In Progress', date: '2023-10-26T08:30:00Z', description: 'Health and sanitation inspector dispatched to location.' }
@@ -107,6 +111,7 @@ export const MOCK_COMPLAINTS: Complaint[] = [
     description: 'Two old CRT televisions and a broken microwave have been left on the sidewalk, obstructing pedestrian traffic.',
     status: 'Pending',
     date: '2023-10-28T09:05:00Z',
+    imageUrl: 'https://c7.alamy.com/comp/3D80JK1/discarded-pile-of-e-waste-trash-including-old-electronics-wood-and-other-household-waste-lies-on-cobblestones-beside-a-bush-and-pavement-3D80JK1.jpg',
     timeline: [
       { status: 'Pending', date: '2023-10-28T09:05:00Z', description: 'Submitted by citizen.' }
     ]
@@ -119,6 +124,7 @@ export const MOCK_COMPLAINTS: Complaint[] = [
     description: 'The smart bin display shows 100% full and is locked, but looking through the flap it appears completely empty. People are leaving trash next to it.',
     status: 'In Progress',
     date: '2023-10-26T14:20:00Z',
+    imageUrl: 'https://images.unsplash.com/photo-1605600659908-0ef719419d41?auto=format&fit=crop&q=80&w=800',
     timeline: [
       { status: 'Pending', date: '2023-10-26T14:20:00Z', description: 'Malfunction reported.' },
       { status: 'In Progress', date: '2023-10-27T10:00:00Z', description: 'Maintenance technician assigned to reset/repair sensor.' }
@@ -132,6 +138,7 @@ export const MOCK_COMPLAINTS: Complaint[] = [
     description: 'The bins outside the elementary school are overflowing with lunch waste. Birds are scattering it everywhere.',
     status: 'Resolved',
     date: '2023-10-20T12:30:00Z',
+    imageUrl: 'https://images.unsplash.com/photo-1528190336454-13cd56b45b5a?auto=format&fit=crop&q=80&w=800',
     timeline: [
       { status: 'Pending', date: '2023-10-20T12:30:00Z', description: 'Reported by school staff.' },
       { status: 'In Progress', date: '2023-10-20T13:00:00Z', description: 'High priority assigned due to school proximity.' },
@@ -146,6 +153,7 @@ export const MOCK_COMPLAINTS: Complaint[] = [
     description: 'Placed 5 bags of yard waste out for Monday collection, but they were skipped while regular trash was taken.',
     status: 'Pending',
     date: '2023-10-28T15:10:00Z',
+    imageUrl: 'https://c7.alamy.com/comp/3FE42G1/green-garden-waste-bags-hanging-from-railings-in-urban-street-awaiting-collection-holloway-london-borough-of-islington-3FE42G1.jpg',
     timeline: [
       { status: 'Pending', date: '2023-10-28T15:10:00Z', description: 'Citizen reported missed yard waste.' }
     ]
