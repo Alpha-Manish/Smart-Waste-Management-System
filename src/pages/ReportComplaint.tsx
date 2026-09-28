@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { PageHeader } from '../components/ui/PageHeader';
+import { complaintService } from '../services/complaintService';
 import { UploadCloud, FileWarning, MapPin, AlignLeft, Type, AlertCircle } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -19,6 +20,7 @@ export default function ReportComplaint() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -70,22 +72,34 @@ export default function ReportComplaint() {
     }
     setPreviewUrl(null);
     setSubmitSuccess(false);
+    setSubmitError(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setSubmitError(null);
     
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      await complaintService.createComplaint({
+        title: formData.title,
+        issue_type: formData.issueType,
+        location: formData.location,
+        description: formData.description,
+        status: 'Pending',
+      });
+
       setSubmitSuccess(true);
       
-      // Auto reset after 3 seconds
       setTimeout(() => {
         handleReset();
       }, 3000);
-    }, 1500);
+    } catch (error: any) {
+      console.error('Failed to submit complaint', error);
+      setSubmitError(error.message || 'An unknown error occurred while submitting.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -96,7 +110,6 @@ export default function ReportComplaint() {
       />
 
       <div className="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
-        {/* Header section of the card */}
         <div className="bg-gradient-to-r from-teal-600 to-emerald-600 px-6 py-4 md:px-8">
           <h2 className="text-xl font-semibold text-white flex items-center gap-2">
             <FileWarning className="w-6 h-6" />
@@ -110,6 +123,13 @@ export default function ReportComplaint() {
             <div className="mb-6 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl p-4 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
               <AlertCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />
               <p className="font-medium">Complaint submitted successfully! Thank you for your report.</p>
+            </div>
+          )}
+
+          {submitError && (
+            <div className="mb-6 bg-red-50 text-red-800 border border-red-200 rounded-xl p-4 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+              <p className="font-medium">Error: {submitError}</p>
             </div>
           )}
 

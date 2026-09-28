@@ -14,8 +14,10 @@ import {
   ChevronRight,
   Menu,
   X,
-  Leaf
+  Leaf,
+  LogOut
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 /** Utility for tailwind class merging */
 function cn(...inputs: ClassValue[]) {
@@ -53,6 +55,7 @@ export function Sidebar({
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const { logout } = useAuth();
 
   return (
     <>
@@ -170,6 +173,19 @@ export function Sidebar({
               </div>
             </div>
           )}
+
+          {/* Logout Button */}
+          <button
+            onClick={logout}
+            className={cn(
+              "flex w-full items-center gap-3 px-3 py-3 mt-2 rounded-xl text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors",
+              isCollapsed ? "justify-center" : "justify-start"
+            )}
+            title="Logout"
+          >
+            <LogOut className="w-5 h-5 flex-shrink-0" />
+            {!isCollapsed && <span className="font-medium">Logout</span>}
+          </button>
         </div>
       </aside>
     </>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { PageHeader } from '../components/ui/PageHeader';
 import { 
@@ -14,7 +14,8 @@ import {
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { type ComplaintStatus, MOCK_COMPLAINTS } from '../data/mockComplaints';
+import { type ComplaintStatus } from '../data/mockComplaints';
+import { complaintService } from '../services/complaintService';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
@@ -30,8 +31,49 @@ export default function ComplaintDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  // Find the specific complaint by ID
-  const complaint = MOCK_COMPLAINTS.find(c => c.id === id) || MOCK_COMPLAINTS[0];
+  const [complaint, setComplaint] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchComplaint = async () => {
+      if (!id) return;
+      try {
+        const c = await complaintService.getComplaintById(id);
+        setComplaint({
+          id: c.id,
+          title: c.title || 'Untitled Complaint',
+          status: c.status,
+          issueType: c.issue_type || 'Other',
+          location: c.location,
+          date: c.created_at || new Date().toISOString(),
+          imageUrl: c.image_url,
+          description: c.description,
+          timeline: []
+        });
+      } catch (error) {
+        console.error('Failed to load complaint', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchComplaint();
+  }, [id]);
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-12">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-teal-600 border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (!complaint) {
+    return (
+      <div className="max-w-5xl mx-auto py-12 text-center text-slate-500 font-medium">
+        Complaint not found.
+      </div>
+    );
+  }
 
   const currentStatusIndex = STATUS_STEPS.findIndex(step => step.status === complaint.status);
 

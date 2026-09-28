@@ -1,11 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '../components/ui/PageHeader';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Search, Filter, Clock, CheckCircle2, AlertCircle, FileWarning, MapPin, Calendar } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { type Complaint, type ComplaintStatus, MOCK_COMPLAINTS } from '../data/mockComplaints';
+import { type ComplaintStatus } from '../data/mockComplaints';
+import { complaintService } from '../services/complaintService';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
@@ -39,11 +40,38 @@ const StatusBadge = ({ status }: { status: ComplaintStatus }) => {
 
 export default function MyComplaints() {
   const navigate = useNavigate();
+  const [complaints, setComplaints] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<ComplaintStatus | 'All'>('All');
 
+  useEffect(() => {
+    const fetchComplaints = async () => {
+      try {
+        const data = await complaintService.getComplaints();
+        const formatted = data.map(c => ({
+          id: c.id,
+          title: c.title || 'Untitled Complaint',
+          status: c.status as ComplaintStatus,
+          issueType: c.issue_type || 'Other',
+          location: c.location,
+          date: c.created_at || new Date().toISOString(),
+          imageUrl: c.image_url,
+          description: c.description,
+          timeline: []
+        }));
+        setComplaints(formatted);
+      } catch (error) {
+        console.error('Error fetching complaints:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchComplaints();
+  }, []);
+
   const filteredComplaints = useMemo(() => {
-    return MOCK_COMPLAINTS.filter((complaint) => {
+    return complaints.filter((complaint) => {
       const matchesSearch = complaint.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                             complaint.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
                             complaint.location.toLowerCase().includes(searchQuery.toLowerCase());
@@ -51,7 +79,7 @@ export default function MyComplaints() {
       
       return matchesSearch && matchesStatus;
     });
-  }, [searchQuery, statusFilter]);
+  }, [searchQuery, statusFilter, complaints]);
 
   return (
     <div className="max-w-6xl mx-auto pb-12">
@@ -91,7 +119,11 @@ export default function MyComplaints() {
       </div>
 
       {/* Complaints Grid */}
-      {filteredComplaints.length > 0 ? (
+      {isLoading ? (
+        <div className="flex justify-center py-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-teal-600 border-t-transparent" />
+        </div>
+      ) : filteredComplaints.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredComplaints.map((complaint) => (
             <div 

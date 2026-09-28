@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -14,7 +14,8 @@ import {
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { type ComplaintStatus, MOCK_COMPLAINTS } from '../data/mockComplaints';
+import { type ComplaintStatus } from '../data/mockComplaints';
+import { complaintService } from '../services/complaintService';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
@@ -30,14 +31,65 @@ export default function AdminComplaintDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  // Find the specific complaint by ID
-  const [complaint, setComplaint] = useState(MOCK_COMPLAINTS.find(c => c.id === id) || MOCK_COMPLAINTS[0]);
+  const [complaint, setComplaint] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  useEffect(() => {
+    const fetchComplaint = async () => {
+      if (!id) return;
+      try {
+        const c = await complaintService.getComplaintById(id);
+        setComplaint({
+          id: c.id,
+          title: c.title || 'Untitled Complaint',
+          status: c.status,
+          issueType: c.issue_type || 'Other',
+          location: c.location,
+          date: c.created_at || new Date().toISOString(),
+          imageUrl: c.image_url,
+          description: c.description,
+          timeline: []
+        });
+      } catch (error) {
+        console.error('Failed to load complaint', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchComplaint();
+  }, [id]);
+
+  const handleUpdateStatus = async (newStatus: ComplaintStatus) => {
+    if (!complaint?.id) return;
+    setIsUpdating(true);
+    try {
+      await complaintService.updateComplaintStatus(complaint.id, newStatus);
+      setComplaint((prev: any) => ({ ...prev, status: newStatus }));
+    } catch (error) {
+      console.error('Failed to update status', error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-12">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-teal-600 border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (!complaint) {
+    return (
+      <div className="max-w-5xl mx-auto py-12 text-center text-slate-500 font-medium">
+        Complaint not found.
+      </div>
+    );
+  }
 
   const currentStatusIndex = STATUS_STEPS.findIndex(step => step.status === complaint.status);
-
-  const handleUpdateStatus = (newStatus: ComplaintStatus) => {
-    setComplaint(prev => ({ ...prev, status: newStatus }));
-  };
 
   return (
     <div className="max-w-5xl mx-auto pb-12">
@@ -70,7 +122,8 @@ export default function AdminComplaintDetails() {
           {complaint.status === 'Pending' && (
             <button 
               onClick={() => handleUpdateStatus('In Progress')}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition-colors flex items-center gap-2"
+              disabled={isUpdating}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition-colors flex items-center gap-2 disabled:opacity-50"
             >
               <AlertCircle className="w-4 h-4" />
               Mark In Progress
@@ -79,7 +132,8 @@ export default function AdminComplaintDetails() {
           {complaint.status !== 'Resolved' && (
             <button 
               onClick={() => handleUpdateStatus('Resolved')}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg shadow-sm transition-colors flex items-center gap-2"
+              disabled={isUpdating}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg shadow-sm transition-colors flex items-center gap-2 disabled:opacity-50"
             >
               <CheckCircle2 className="w-4 h-4" />
               Mark Resolved

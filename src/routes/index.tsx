@@ -3,8 +3,11 @@ import { useRoutes } from 'react-router-dom';
 import { CitizenLayout } from '../layouts/CitizenLayout';
 import { AdminLayout } from '../layouts/AdminLayout';
 import { NotFound } from '../pages/NotFound';
+import { ProtectedRoute } from '../components/ProtectedRoute';
 
 // Lazy loaded page components
+const Login = lazy(() => import('../pages/Login'));
+const Register = lazy(() => import('../pages/Register'));
 const LandingPage = lazy(() => import('../pages/LandingPage'));
 const CitizenDashboard = lazy(() => import('../pages/CitizenDashboard'));
 const AdminDashboard = lazy(() => import('../pages/AdminDashboard'));
@@ -41,9 +44,28 @@ export const AppRoutes = () => {
       ),
     },
     {
+      path: '/login',
+      element: (
+        <Suspense fallback={<PageLoader />}>
+          <Login />
+        </Suspense>
+      ),
+    },
+    {
+      path: '/register',
+      element: (
+        <Suspense fallback={<PageLoader />}>
+          <Register />
+        </Suspense>
+      ),
+    },
+    {
       path: '/citizen',
-      element: <CitizenLayout />,
+      element: <ProtectedRoute allowedRoles={['citizen']} redirectPath="/login" />,
       children: [
+        {
+          element: <CitizenLayout />,
+          children: [
         {
           index: true,
           element: (
@@ -77,11 +99,16 @@ export const AppRoutes = () => {
           ),
         },
       ]
-    },
+    }
+  ]
+},
     {
       path: '/admin',
-      element: <AdminLayout />,
+      element: <ProtectedRoute allowedRoles={['admin']} redirectPath="/login" />,
       children: [
+        {
+          element: <AdminLayout />,
+          children: [
         {
           index: true,
           element: (
@@ -180,7 +207,9 @@ export const AppRoutes = () => {
         },
         // Note: Add other admin routes here in the future
       ]
-    },
+    }
+  ]
+},
     {
       path: '*',
       element: <NotFound />,

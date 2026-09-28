@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '../components/ui/PageHeader';
-import { type Complaint, type ComplaintStatus, MOCK_COMPLAINTS } from '../data/mockComplaints';
+import { type ComplaintStatus } from '../data/mockComplaints';
+import { complaintService } from '../services/complaintService';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -49,15 +50,43 @@ const StatusBadge = ({ status }: { status: ComplaintStatus }) => {
 
 export default function AdminComplaints() {
   const navigate = useNavigate();
-  const [complaints, setComplaints] = useState<Complaint[]>(MOCK_COMPLAINTS);
+  const [complaints, setComplaints] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('All');
   const [issueTypeFilter, setIssueTypeFilter] = useState<string>('All');
   const [currentPage, setCurrentPage] = useState(1);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
-  const uniqueIssueTypes = Array.from(new Set(complaints.map(c => c.issueType)));
-  const counts = getComplaintCounts(complaints);
+  useEffect(() => {
+    fetchComplaints();
+  }, []);
+
+  const fetchComplaints = async () => {
+    setIsLoading(true);
+    try {
+      const data = await complaintService.getComplaints();
+      const formatted = data.map(c => ({
+        id: c.id,
+        title: c.title || 'Untitled Complaint',
+        status: c.status,
+        issueType: c.issue_type || 'Other',
+        location: c.location,
+        date: c.created_at || new Date().toISOString(),
+        imageUrl: c.image_url,
+        description: c.description,
+        timeline: []
+      }));
+      setComplaints(formatted);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const uniqueIssueTypes = useMemo(() => Array.from(new Set(complaints.map(c => c.issueType))), [complaints]);
+  const counts = useMemo(() => getComplaintCounts(complaints), [complaints]);
 
   const statCards = [
     { title: 'Total Complaints', value: counts.total, icon: FileWarning, color: 'text-indigo-600', bg: 'bg-indigo-50' },
@@ -84,11 +113,17 @@ export default function AdminComplaints() {
   const currentComplaints = filteredComplaints.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   // Status Update Handler
-  const handleUpdateStatus = (id: string, newStatus: ComplaintStatus) => {
-    setComplaints(prev => prev.map(c => 
-      c.id === id ? { ...c, status: newStatus } : c
-    ));
-    setOpenDropdownId(null);
+  const handleUpdateStatus = async (id: string, newStatus: ComplaintStatus) => {
+    try {
+      await complaintService.updateComplaintStatus(id, newStatus);
+      setComplaints(prev => prev.map(c => 
+        c.id === id ? { ...c, status: newStatus } : c
+      ));
+    } catch (error) {
+      console.error('Failed to update status', error);
+    } finally {
+      setOpenDropdownId(null);
+    }
   };
 
   return (
@@ -185,7 +220,15 @@ export default function AdminComplaints() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {currentComplaints.length > 0 ? (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-12 text-center">
+                    <div className="flex justify-center">
+                      <div className="h-8 w-8 animate-spin rounded-full border-4 border-teal-600 border-t-transparent" />
+                    </div>
+                  </td>
+                </tr>
+              ) : currentComplaints.length > 0 ? (
                 currentComplaints.map((complaint) => (
                   <tr key={complaint.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-6 py-4 font-medium text-slate-900">
