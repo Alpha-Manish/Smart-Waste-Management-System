@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trash2, MapPin, Database, Percent, Save, X, ArrowLeft } from 'lucide-react';
+import { Trash2, MapPin, Database, Percent, Save, X, ArrowLeft, AlertTriangle } from 'lucide-react';
+import { binService } from '../services/binService';
+import { getStatusFromPercentage } from '../components/BinStatus';
 
 export default function AddBin() {
   const navigate = useNavigate();
@@ -11,13 +13,29 @@ export default function AddBin() {
     fillPercentage: 0
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate save functionality in local state
-    console.log('Saved bin data:', formData);
-    alert(`Successfully saved bin: ${formData.name}`);
-    // Navigate back to bins list
-    navigate('/admin/bins');
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      await binService.createBin({
+        name: formData.name,
+        location: formData.location,
+        capacity: formData.capacity,
+        fillPercentage: formData.fillPercentage,
+        status: getStatusFromPercentage(formData.fillPercentage)
+      });
+      navigate('/admin/bins');
+    } catch (err: any) {
+      console.error('Error creating bin:', err);
+      setError(err.message || 'Failed to create bin.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -45,6 +63,12 @@ export default function AddBin() {
 
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="p-8 space-y-8">
+          {error && (
+            <div className="bg-red-50 text-red-800 p-4 rounded-xl flex items-start gap-3 mb-6">
+              <AlertTriangle className="w-5 h-5 flex-shrink-0 text-red-500" />
+              <p className="text-sm font-medium">{error}</p>
+            </div>
+          )}
           
           <div className="space-y-6">
             <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-4">
@@ -134,10 +158,11 @@ export default function AddBin() {
           </button>
           <button
             type="submit"
-            className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-xl transition-colors shadow-sm hover:shadow flex items-center gap-2"
+            disabled={isLoading}
+            className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-xl transition-colors shadow-sm hover:shadow flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
           >
             <Save className="w-5 h-5" />
-            Save Bin
+            {isLoading ? 'Saving...' : 'Save Bin'}
           </button>
         </div>
       </form>

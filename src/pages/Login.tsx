@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -10,8 +10,17 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   
   const navigate = useNavigate();
-  const { role } = useAuth();
+  const { user, role, isLoading } = useAuth();
 
+  useEffect(() => {
+    if (!isLoading && user) {
+      if (role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/citizen');
+      }
+    }
+  }, [user, role, isLoading, navigate]);
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);

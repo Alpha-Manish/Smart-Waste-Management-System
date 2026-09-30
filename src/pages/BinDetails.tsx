@@ -5,12 +5,12 @@ import {
   ArrowLeft, BatteryMedium, CheckCircle2, AlertTriangle, 
   History, Clock, Truck, Edit
 } from 'lucide-react';
-import { mockBins, type SmartBin, type BinStatus } from '../data/mockBins';
+import { mockHistory } from '../data/mockBins'; // Keep mock history or remove it
+import { binService, type Bin as SmartBin } from '../services/binService';
 import { BinStatusBadge } from '../components/BinStatus';
 import { FillLevelProgress } from '../components/FillLevelProgress';
 
-// Mock history data specific to a bin
-const mockHistory = [
+const mockHistoryData = [
   { id: 1, date: '2023-10-15', time: '08:30 AM', truck: 'Truck-04', action: 'Waste Collected', by: 'Driver Smith' },
   { id: 2, date: '2023-10-14', time: '02:15 PM', truck: 'Maintenance', action: 'Sensor Cleaned', by: 'Tech Team A' },
   { id: 3, date: '2023-10-10', time: '09:00 AM', truck: 'Truck-02', action: 'Waste Collected', by: 'Driver Jones' },
@@ -24,13 +24,20 @@ export default function BinDetails() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate API fetch
-    const timer = setTimeout(() => {
-      const foundBin = mockBins.find(b => b.id === id);
-      setBin(foundBin || null);
-      setLoading(false);
-    }, 400);
-    return () => clearTimeout(timer);
+    if (!id) return;
+    const fetchBin = async () => {
+      try {
+        setLoading(true);
+        const foundBin = await binService.getBinById(id);
+        setBin(foundBin || null);
+      } catch (err) {
+        console.error('Error fetching bin details:', err);
+        setBin(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBin();
   }, [id]);
 
   if (loading) {
@@ -155,7 +162,7 @@ export default function BinDetails() {
             </h3>
             
             <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
-              {mockHistory.map((item, index) => (
+              {mockHistoryData.map((item, index) => (
                 <div key={item.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
                   {/* Timeline dot */}
                   <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-white bg-slate-100 text-slate-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">

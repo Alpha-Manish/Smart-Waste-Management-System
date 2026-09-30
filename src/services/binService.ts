@@ -2,12 +2,12 @@ import { supabase } from '../lib/supabase';
 
 export interface Bin {
   id?: string;
-  location_name: string;
-  latitude: number;
-  longitude: number;
-  fill_level: number;
-  status: 'empty' | 'half_full' | 'full' | 'overflowing';
-  last_collected_at?: string;
+  name: string;
+  location: string;
+  capacity: string;
+  fillPercentage: number;
+  status: string;
+  lastCollectedDate?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -49,5 +49,24 @@ export const binService = {
       .select();
     if (error) throw error;
     return data;
+  },
+
+  async updateBin(id: string, bin: Partial<Bin>) {
+    const { data, error } = await supabase
+      .from('bins')
+      .update({ ...bin, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteBin(id: string) {
+    const { error } = await supabase
+      .from('bins')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+    return true;
   }
 };

@@ -38,10 +38,7 @@ export const complaintService = {
     
     const { data, error } = await supabase
       .from('complaints')
-      .insert([{
-        ...complaint,
-        user_id: user?.id // automatically attach the logged-in user
-      }])
+      .insert([complaint])
       .select();
     if (error) throw error;
     return data;

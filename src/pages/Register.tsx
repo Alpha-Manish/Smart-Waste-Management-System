@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function Register() {
   const [email, setEmail] = useState('');
@@ -9,8 +10,18 @@ export default function Register() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   
+  const { user, role: currentRole, isLoading } = useAuth();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (!isLoading && user) {
+      if (currentRole === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/citizen');
+      }
+    }
+  }, [user, currentRole, isLoading, navigate]);
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);

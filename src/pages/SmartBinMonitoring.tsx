@@ -5,7 +5,8 @@ import {
   BatteryMedium, AlertTriangle, CheckCircle2,
   LayoutGrid, List, Trash2
 } from 'lucide-react';
-import { mockBins, type BinStatus } from '../data/mockBins';
+import { binService, type Bin } from '../services/binService';
+import { type BinStatus } from '../data/mockBins';
 import { BinStatusBadge, getStatusFromPercentage } from '../components/BinStatus';
 import { FillLevelProgress } from '../components/FillLevelProgress';
 
@@ -18,16 +19,48 @@ export default function SmartBinMonitoring() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<BinStatus | 'All'>('All');
   const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
+  const [bins, setBins] = useState<Bin[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchBins = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const data = await binService.getBins();
+      setBins(data);
+    } catch (err: any) {
+      console.error('Failed to fetch bins:', err);
+      setError(err.message || 'Failed to load bins.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchBins();
+  }, []);
+
+  const handleDeleteBin = async (id: string | undefined) => {
+    if (!id || !window.confirm('Are you sure you want to delete this bin?')) return;
+    try {
+      await binService.deleteBin(id);
+      fetchBins(); // Refresh list after deletion
+    } catch (err: any) {
+      alert('Failed to delete bin: ' + err.message);
+    }
+  };
 
   const filteredBins = useMemo(() => {
-    return mockBins.filter(bin => {
-      const matchesSearch = bin.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                            bin.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            bin.location.toLowerCase().includes(searchTerm.toLowerCase());
+    return bins.filter(bin => {
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch = bin.name.toLowerCase().includes(searchLower) || 
+                            (bin.id && bin.id.toLowerCase().includes(searchLower)) ||
+                            bin.location.toLowerCase().includes(searchLower);
       const matchesStatus = statusFilter === 'All' || getStatusFromPercentage(bin.fillPercentage) === statusFilter;
       return matchesSearch && matchesStatus;
     });
-  }, [searchTerm, statusFilter]);
+  }, [bins, searchTerm, statusFilter]);
 
   return (
     <div className="space-y-6">
@@ -104,8 +137,23 @@ export default function SmartBinMonitoring() {
         </div>
       </div>
 
+
       {/* Content Area */}
-      {filteredBins.length === 0 ? (
+      {isLoading ? (
+        <div className="bg-white rounded-2xl border border-slate-200 p-12 flex flex-col items-center justify-center text-center shadow-sm">
+           <div className="h-8 w-8 animate-spin rounded-full border-4 border-teal-600 border-t-transparent mb-4" />
+           <p className="text-slate-500 font-medium">Loading bins data...</p>
+        </div>
+      ) : error ? (
+        <div className="bg-red-50 rounded-2xl border border-red-200 p-8 flex flex-col items-center justify-center text-center shadow-sm">
+           <AlertTriangle className="w-10 h-10 text-red-500 mb-3" />
+           <h3 className="text-lg font-bold text-red-800">Error loading data</h3>
+           <p className="text-red-600 mt-1">{error}</p>
+           <button onClick={fetchBins} className="mt-4 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-medium transition-colors">
+             Try Again
+           </button>
+        </div>
+      ) : filteredBins.length === 0 ? (
         <div className="bg-white rounded-2xl border border-slate-200 p-12 flex flex-col items-center justify-center text-center shadow-sm">
           <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
             <Trash2 className="w-8 h-8 text-slate-400" />
@@ -173,6 +221,9 @@ export default function SmartBinMonitoring() {
                             <Link to={`/admin/bins/edit/${bin.id}`} className="text-teal-600 hover:text-teal-800 text-sm font-medium">
                               Edit
                             </Link>
+                            <button onClick={() => handleDeleteBin(bin.id)} className="text-red-500 hover:text-red-700 text-sm font-medium">
+                              Delete
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -240,7 +291,7 @@ export default function SmartBinMonitoring() {
                     <Link to={`/admin/bins/edit/${bin.id}`} className="flex-1 text-center bg-teal-50 text-teal-700 hover:bg-teal-100 py-2 rounded-xl text-sm font-semibold transition-colors">
                       Edit
                     </Link>
-                    <button className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors">
+                    <button onClick={() => handleDeleteBin(bin.id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors">
                       <Trash2 className="w-5 h-5" />
                     </button>
                   </div>

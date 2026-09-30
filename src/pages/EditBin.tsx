@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Trash2, MapPin, Database, Percent, Save, X, ArrowLeft, AlertCircle } from 'lucide-react';
-import { mockBins } from '../data/mockBins';
+import { Trash2, MapPin, Database, Percent, Save, X, ArrowLeft, AlertCircle, AlertTriangle } from 'lucide-react';
+import { binService } from '../services/binService';
+import { getStatusFromPercentage } from '../components/BinStatus';
 
 export default function EditBin() {
   const navigate = useNavigate();
@@ -15,35 +16,54 @@ export default function EditBin() {
   });
   
   const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [notFound, setNotFound] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Simulate a brief loading period to mimic fetching data
-    const timer = setTimeout(() => {
-      const bin = mockBins.find(b => b.id === id);
-      if (bin) {
-        setFormData({
-          name: bin.name,
-          location: bin.location,
-          capacity: bin.capacity,
-          fillPercentage: bin.fillPercentage
-        });
-      } else {
+    if (!id) return;
+    const fetchBin = async () => {
+      try {
+        setLoading(true);
+        const bin = await binService.getBinById(id);
+        if (bin) {
+          setFormData({
+            name: bin.name,
+            location: bin.location,
+            capacity: bin.capacity,
+            fillPercentage: bin.fillPercentage
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching bin:', err);
         setNotFound(true);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    }, 400);
-
-    return () => clearTimeout(timer);
+    };
+    fetchBin();
   }, [id]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate save functionality in local state
-    console.log('Updated bin data:', formData);
-    alert(`Successfully updated bin: ${formData.name}`);
-    // Navigate back to bins list
-    navigate('/admin/bins');
+    if (!id) return;
+    setIsSaving(true);
+    setError(null);
+    try {
+      await binService.updateBin(id, {
+        name: formData.name,
+        location: formData.location,
+        capacity: formData.capacity,
+        fillPercentage: formData.fillPercentage,
+        status: getStatusFromPercentage(formData.fillPercentage)
+      });
+      navigate('/admin/bins');
+    } catch (err: any) {
+      console.error('Error updating bin:', err);
+      setError(err.message || 'Failed to update bin.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -101,6 +121,12 @@ export default function EditBin() {
 
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="p-8 space-y-8">
+          {error && (
+            <div className="bg-red-50 text-red-800 p-4 rounded-xl flex items-start gap-3 mb-6">
+              <AlertTriangle className="w-5 h-5 flex-shrink-0 text-red-500" />
+              <p className="text-sm font-medium">{error}</p>
+            </div>
+          )}
           
           <div className="space-y-6">
             <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-4">
@@ -190,10 +216,11 @@ export default function EditBin() {
           </button>
           <button
             type="submit"
-            className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-xl transition-colors shadow-sm hover:shadow flex items-center gap-2"
+            disabled={isSaving}
+            className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-xl transition-colors shadow-sm hover:shadow flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
           >
             <Save className="w-5 h-5" />
-            Update
+            {isSaving ? 'Updating...' : 'Update'}
           </button>
         </div>
       </form>
