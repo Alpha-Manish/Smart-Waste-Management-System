@@ -1,6 +1,5 @@
-import React from 'react';
-
 interface LoadingStateProps {
+
   type?: 'spinner' | 'skeleton';
   text?: string;
   fullHeight?: boolean;

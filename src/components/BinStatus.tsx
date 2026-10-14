@@ -1,4 +1,3 @@
-import React from 'react';
 import { AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 export type StatusType = 'Empty' | 'Normal' | 'Almost Full' | 'Full';

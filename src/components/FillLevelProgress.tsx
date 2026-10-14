@@ -1,6 +1,5 @@
-import React from 'react';
-
 export interface FillLevelProgressProps {
+
   percentage: number;
   className?: string;
   size?: 'sm' | 'md' | 'lg';

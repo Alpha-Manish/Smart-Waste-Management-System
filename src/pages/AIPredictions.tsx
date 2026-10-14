@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   BrainCircuit, 
@@ -14,8 +13,6 @@ import {
   Bell
 } from 'lucide-react';
 import { 
-  AreaChart, 
-  Area, 
   XAxis, 
   YAxis, 
   CartesianGrid, 
@@ -25,6 +22,7 @@ import {
   Line
 } from 'recharts';
 import { RiskLevelBadge, type RiskLevel } from '../components/RiskLevelBadge';
+
 
 // Mock Data
 const predictionSummary = [
@@ -86,11 +84,12 @@ type HighRiskBin = {
 };
 
 const highRiskBins: HighRiskBin[] = [
-  { id: "BIN-089", location: "Downtown Central Plaza", currentFill: 88, predictedFill: 100, riskLevel: "Critical", riskScore: 98 },
-  { id: "BIN-142", location: "Westside Tech Park", currentFill: 82, predictedFill: 95, riskLevel: "High", riskScore: 85 },
-  { id: "BIN-055", location: "North Station", currentFill: 75, predictedFill: 90, riskLevel: "High", riskScore: 78 },
-  { id: "BIN-012", location: "South Market", currentFill: 65, predictedFill: 80, riskLevel: "Medium", riskScore: 65 },
+  { id: "BIN-089", location: "Downtown Central Plaza", currentFill: 88, predictedFill: 100, riskLevel: "Critical" as RiskLevel, riskScore: 98 },
+  { id: "BIN-142", location: "Westside Tech Park", currentFill: 82, predictedFill: 95, riskLevel: "High" as RiskLevel, riskScore: 85 },
+  { id: "BIN-055", location: "North Station", currentFill: 75, predictedFill: 90, riskLevel: "High" as RiskLevel, riskScore: 78 },
+  { id: "BIN-012", location: "South Market", currentFill: 65, predictedFill: 80, riskLevel: "Medium" as RiskLevel, riskScore: 65 },
 ].sort((a, b) => b.riskScore - a.riskScore);
+
 
 const aiRecommendations = [
   {

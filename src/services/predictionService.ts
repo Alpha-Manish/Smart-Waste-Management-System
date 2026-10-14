@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { isAuthorizedAdminEmail } from '../utils/auth';
 
 export interface Prediction {
   id?: string;
@@ -33,6 +34,11 @@ export const predictionService = {
   },
 
   async createPrediction(prediction: Prediction) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || !isAuthorizedAdminEmail(user.email)) {
+      throw new Error('Unauthorized: Only the authorized system admin can create predictions.');
+    }
+
     const { data, error } = await supabase
       .from('predictions')
       .insert([prediction])
@@ -41,3 +47,4 @@ export const predictionService = {
     return data;
   }
 };
+

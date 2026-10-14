@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { isAuthorizedAdminEmail } from '../utils/auth';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -10,37 +11,37 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   
   const navigate = useNavigate();
-  const { user, role, isLoading } = useAuth();
+  const { user, isAdmin, isLoading } = useAuth();
 
   useEffect(() => {
     if (!isLoading && user) {
-      if (role === 'admin') {
-        navigate('/admin');
+      if (isAdmin) {
+        navigate('/admin', { replace: true });
       } else {
-        navigate('/citizen');
+        navigate('/citizen', { replace: true });
       }
     }
-  }, [user, role, isLoading, navigate]);
+  }, [user, isAdmin, isLoading, navigate]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
     try {
+      const cleanEmail = email.trim();
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: cleanEmail,
         password,
       });
 
       if (error) throw error;
 
-      // Role is extracted via AuthContext after session update
-      const userRole = data.user?.user_metadata?.role || 'citizen';
-      
-      if (userRole === 'admin') {
-        navigate('/admin');
+      // Check strictly against authorized admin email
+      if (isAuthorizedAdminEmail(data.user?.email)) {
+        navigate('/admin', { replace: true });
       } else {
-        navigate('/citizen');
+        navigate('/citizen', { replace: true });
       }
     } catch (err: any) {
       setError(err.message || 'Failed to login');
@@ -48,6 +49,7 @@ export default function Login() {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">

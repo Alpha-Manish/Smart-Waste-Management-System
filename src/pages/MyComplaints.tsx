@@ -1,12 +1,14 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '../components/ui/PageHeader';
 import { EmptyState } from '../components/ui/EmptyState';
-import { Search, Filter, Clock, CheckCircle2, AlertCircle, FileWarning, MapPin, Calendar } from 'lucide-react';
+import { Search, Filter, Clock, CheckCircle2, AlertCircle, FileWarning, MapPin, Calendar, UserCheck, Users } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { type ComplaintStatus } from '../data/mockComplaints';
 import { complaintService } from '../services/complaintService';
+import { useAuth } from '../contexts/AuthContext';
+import { extractReporterEmail, cleanDescription } from '../utils/complaints';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
@@ -40,27 +42,48 @@ const StatusBadge = ({ status }: { status: ComplaintStatus }) => {
 
 export default function MyComplaints() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [complaints, setComplaints] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'mine' | 'all'>('mine');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<ComplaintStatus | 'All'>('All');
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
+
+  const handleImageError = (id: string) => {
+    setFailedImages(prev => ({ ...prev, [id]: true }));
+  };
 
   useEffect(() => {
     const fetchComplaints = async () => {
       try {
         const data = await complaintService.getComplaints();
-        const formatted = data.map(c => ({
-          id: c.id,
-          title: c.title || 'Untitled Complaint',
-          status: c.status as ComplaintStatus,
-          issueType: c.issue_type || 'Other',
-          location: c.location,
-          date: c.created_at || new Date().toISOString(),
-          imageUrl: c.image_url,
-          description: c.description,
-          timeline: []
-        }));
+        const formatted = await Promise.all(
+          data.map(async (c: any) => {
+            const resolvedUrl = c.image_url ? await complaintService.getImageUrl(c.image_url) : null;
+            const reporter = extractReporterEmail(c.description, c.user_email);
+            const isMine = !!(user?.email && reporter.toLowerCase() === user.email.toLowerCase());
+            return {
+              id: c.id,
+              title: c.title || 'Untitled Complaint',
+              status: c.status as ComplaintStatus,
+              issueType: c.issue_type || 'Other',
+              location: c.location,
+              date: c.created_at || new Date().toISOString(),
+              imageUrl: resolvedUrl,
+              description: cleanDescription(c.description),
+              reporterEmail: reporter,
+              isMine,
+              timeline: []
+            };
+          })
+        );
         setComplaints(formatted);
+        // If user has 0 personal complaints, default view to all community issues so page is not empty
+        const userHasReports = formatted.some(c => c.isMine);
+        if (!userHasReports) {
+          setActiveTab('all');
+        }
       } catch (error) {
         console.error('Error fetching complaints:', error);
       } finally {
@@ -68,25 +91,60 @@ export default function MyComplaints() {
       }
     };
     fetchComplaints();
-  }, []);
+  }, [user?.email]);
+
+  const myComplaintsCount = useMemo(() => complaints.filter(c => c.isMine).length, [complaints]);
 
   const filteredComplaints = useMemo(() => {
     return complaints.filter((complaint) => {
-      const matchesSearch = complaint.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                            complaint.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            complaint.location.toLowerCase().includes(searchQuery.toLowerCase());
+      if (activeTab === 'mine' && !complaint.isMine) {
+        return false;
+      }
+      const query = searchQuery.toLowerCase();
+      const matchesSearch = complaint.title.toLowerCase().includes(query) || 
+                            complaint.id.toLowerCase().includes(query) ||
+                            complaint.location.toLowerCase().includes(query) ||
+                            (complaint.reporterEmail && complaint.reporterEmail.toLowerCase().includes(query));
       const matchesStatus = statusFilter === 'All' || complaint.status === statusFilter;
       
       return matchesSearch && matchesStatus;
     });
-  }, [searchQuery, statusFilter, complaints]);
+  }, [searchQuery, statusFilter, complaints, activeTab]);
 
   return (
     <div className="max-w-6xl mx-auto pb-12">
       <PageHeader 
-        title="My Complaints" 
-        description="Track the status and history of the issues you've reported." 
+        title="Complaints & Issue Tracking" 
+        description="Monitor status, review submitted issues, and follow municipal resolution in real-time." 
       />
+
+      {/* Scope Switcher Tabs */}
+      <div className="flex items-center gap-3 mb-6">
+        <button
+          onClick={() => setActiveTab('mine')}
+          className={cn(
+            "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-xs",
+            activeTab === 'mine'
+              ? "bg-teal-600 text-white shadow-teal-200/50"
+              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+          )}
+        >
+          <UserCheck className="w-4 h-4" />
+          My Submissions ({myComplaintsCount})
+        </button>
+        <button
+          onClick={() => setActiveTab('all')}
+          className={cn(
+            "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-xs",
+            activeTab === 'all'
+              ? "bg-teal-600 text-white shadow-teal-200/50"
+              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+          )}
+        >
+          <Users className="w-4 h-4" />
+          Community Issues ({complaints.length})
+        </button>
+      </div>
 
       {/* Filters and Search */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 mb-6 flex flex-col sm:flex-row gap-4 justify-between items-center">
@@ -96,7 +154,7 @@ export default function MyComplaints() {
           </div>
           <input
             type="text"
-            placeholder="Search by title, ID, or location..."
+            placeholder="Search by title, ID, reporter email, location..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-xl focus:ring-teal-500 focus:border-teal-500 text-sm text-slate-900 shadow-sm transition-colors hover:border-slate-400 bg-slate-50 focus:bg-white"
@@ -131,11 +189,12 @@ export default function MyComplaints() {
               onClick={() => navigate(`/citizen/complaints/${complaint.id}`)}
               className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow group flex flex-col cursor-pointer"
             >
-              {complaint.imageUrl ? (
-                <div className="h-48 overflow-hidden relative">
+              {complaint.imageUrl && !failedImages[complaint.id] ? (
+                <div className="h-48 overflow-hidden relative bg-slate-100">
                   <img 
                     src={complaint.imageUrl} 
                     alt={complaint.title} 
+                    onError={() => handleImageError(complaint.id)}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute top-4 right-4">
@@ -146,8 +205,17 @@ export default function MyComplaints() {
               <div className="p-5 border-b border-slate-100 flex-1">
                 <div className="flex justify-between items-start mb-4">
                   <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{complaint.id}</span>
-                  {!complaint.imageUrl && <StatusBadge status={complaint.status} />}
+                  <div className="flex items-center gap-1.5">
+                    {complaint.isMine && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-teal-50 text-teal-700 border border-teal-200 px-2 py-0.5 rounded-full">
+                        <UserCheck className="w-3 h-3" />
+                        You
+                      </span>
+                    )}
+                    {(!complaint.imageUrl || failedImages[complaint.id]) && <StatusBadge status={complaint.status} />}
+                  </div>
                 </div>
+
                 <h3 className="text-lg font-bold text-slate-900 mb-2 line-clamp-2 group-hover:text-teal-700 transition-colors">
                   {complaint.title}
                 </h3>
@@ -161,6 +229,11 @@ export default function MyComplaints() {
                     <MapPin className="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0" />
                     <span className="line-clamp-2">{complaint.location}</span>
                   </div>
+                  {complaint.reporterEmail && !complaint.isMine && (
+                    <div className="text-xs text-slate-400 font-mono truncate pt-1">
+                      Reported by: <span className="font-semibold text-slate-600">{complaint.reporterEmail}</span>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="bg-slate-50 px-5 py-3 flex items-center justify-between mt-auto">

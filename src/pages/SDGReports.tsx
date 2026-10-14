@@ -1,5 +1,5 @@
-import React from 'react';
-import { Globe2, Target, TrendingUp, TrendingDown, Wind, CheckCircle2, Truck, Leaf, Users, Lightbulb } from 'lucide-react';
+import { Globe2, Target, TrendingDown, Wind, CheckCircle2, Truck, Users, Lightbulb } from 'lucide-react';
+
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 const mockMetrics = [

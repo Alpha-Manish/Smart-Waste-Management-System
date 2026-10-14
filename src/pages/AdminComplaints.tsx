@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '../components/ui/PageHeader';
 import { type ComplaintStatus } from '../data/mockComplaints';
 import { complaintService } from '../services/complaintService';
+import { extractReporterEmail, cleanDescription } from '../utils/complaints';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -66,7 +67,7 @@ export default function AdminComplaints() {
     setIsLoading(true);
     try {
       const data = await complaintService.getComplaints();
-      const formatted = data.map(c => ({
+      const formatted = data.map((c: any) => ({
         id: c.id,
         title: c.title || 'Untitled Complaint',
         status: c.status,
@@ -74,7 +75,8 @@ export default function AdminComplaints() {
         location: c.location,
         date: c.created_at || new Date().toISOString(),
         imageUrl: c.image_url,
-        description: c.description,
+        description: cleanDescription(c.description),
+        reporterEmail: extractReporterEmail(c.description, c.user_email),
         timeline: []
       }));
       setComplaints(formatted);
@@ -98,8 +100,9 @@ export default function AdminComplaints() {
   // Filter
   const filteredComplaints = complaints.filter(c => {
     const matchesSearch = c.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          c.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          c.location.toLowerCase().includes(searchQuery.toLowerCase());
+                          String(c.id).toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          c.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          c.reporterEmail.toLowerCase().includes(searchQuery.toLowerCase());
                           
     const matchesStatus = statusFilter === 'All' || c.status === statusFilter;
     const matchesIssue = issueTypeFilter === 'All' || c.issueType === issueTypeFilter;
@@ -107,24 +110,27 @@ export default function AdminComplaints() {
     return matchesSearch && matchesStatus && matchesIssue;
   });
 
+
   // Pagination
   const totalPages = Math.ceil(filteredComplaints.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const currentComplaints = filteredComplaints.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   // Status Update Handler
-  const handleUpdateStatus = async (id: string, newStatus: ComplaintStatus) => {
+  const handleUpdateStatus = async (id: string | number, newStatus: ComplaintStatus) => {
     try {
       await complaintService.updateComplaintStatus(id, newStatus);
       setComplaints(prev => prev.map(c => 
-        c.id === id ? { ...c, status: newStatus } : c
+        String(c.id) === String(id) ? { ...c, status: newStatus } : c
       ));
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to update status', error);
+      alert('Failed to update status: ' + (error?.message || 'Unknown error'));
     } finally {
       setOpenDropdownId(null);
     }
   };
+
 
   return (
     <div className="max-w-7xl mx-auto pb-12">
@@ -212,6 +218,7 @@ export default function AdminComplaints() {
               <tr>
                 <th className="px-6 py-4 font-bold">Complaint ID</th>
                 <th className="px-6 py-4 font-bold">Title</th>
+                <th className="px-6 py-4 font-bold">Reported By</th>
                 <th className="px-6 py-4 font-bold">Issue Type</th>
                 <th className="px-6 py-4 font-bold">Location</th>
                 <th className="px-6 py-4 font-bold">Date</th>
@@ -222,7 +229,7 @@ export default function AdminComplaints() {
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center">
+                  <td colSpan={8} className="px-6 py-12 text-center">
                     <div className="flex justify-center">
                       <div className="h-8 w-8 animate-spin rounded-full border-4 border-teal-600 border-t-transparent" />
                     </div>
@@ -236,6 +243,14 @@ export default function AdminComplaints() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="font-semibold text-slate-900 line-clamp-1">{complaint.title}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono bg-slate-100 text-slate-700 border border-slate-200">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
+                        <span className="truncate max-w-[160px]" title={complaint.reporterEmail}>
+                          {complaint.reporterEmail}
+                        </span>
+                      </span>
                     </td>
                     <td className="px-6 py-4 text-slate-600 whitespace-nowrap">
                       {complaint.issueType}
@@ -257,6 +272,7 @@ export default function AdminComplaints() {
                         className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
                       >
                         <MoreVertical className="w-5 h-5" />
+
                       </button>
                       
                       {/* Actions Dropdown */}
@@ -308,9 +324,10 @@ export default function AdminComplaints() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
+                  <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
                     No complaints found matching your search.
                   </td>
+
                 </tr>
               )}
             </tbody>

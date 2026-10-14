@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  LineChart, Line, PieChart, Pie, Cell, AreaChart, Area
+  LineChart, Line, PieChart, Pie, Cell
 } from 'recharts';
 import { 
-  TrendingUp, TrendingDown, Users, AlertTriangle, 
+  TrendingUp, TrendingDown, AlertTriangle, 
   Trash2, CheckCircle2, FileWarning, Calendar, Filter, Clock, BatteryMedium,
-  MapPin, Lightbulb, Activity, CheckCircle, Flame
+  MapPin, Lightbulb, Activity, Flame
 } from 'lucide-react';
 import { mockBins } from '../data/mockBins';
 
@@ -20,14 +20,6 @@ const overviewStats = [
   { title: 'Almost Full Bins', value: '456', trend: '+3%', isUp: true, icon: BatteryMedium, color: 'text-orange-600', bg: 'bg-orange-50' },
 ];
 
-const complaintData = [
-  { name: 'Jan', Resolved: 400, Pending: 240, New: 150 },
-  { name: 'Feb', Resolved: 300, Pending: 139, New: 220 },
-  { name: 'Mar', Resolved: 200, Pending: 980, New: 120 },
-  { name: 'Apr', Resolved: 278, Pending: 390, New: 250 },
-  { name: 'May', Resolved: 189, Pending: 480, New: 210 },
-  { name: 'Jun', Resolved: 239, Pending: 380, New: 190 },
-];
 
 const complaintTrendData = [
   { name: 'Jan', Submitted: 120 },

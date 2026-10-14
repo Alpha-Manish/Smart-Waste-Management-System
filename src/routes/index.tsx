@@ -4,12 +4,15 @@ import { CitizenLayout } from '../layouts/CitizenLayout';
 import { AdminLayout } from '../layouts/AdminLayout';
 import { NotFound } from '../pages/NotFound';
 import { ProtectedRoute } from '../components/ProtectedRoute';
+import { AdminRoute } from '../components/AdminRoute';
 
 // Lazy loaded page components
 const Login = lazy(() => import('../pages/Login'));
 const Register = lazy(() => import('../pages/Register'));
+const Unauthorized = lazy(() => import('../pages/Unauthorized'));
 const LandingPage = lazy(() => import('../pages/LandingPage'));
 const CitizenDashboard = lazy(() => import('../pages/CitizenDashboard'));
+const CitizenProfile = lazy(() => import('../pages/CitizenProfile'));
 const AdminDashboard = lazy(() => import('../pages/AdminDashboard'));
 const ReportComplaint = lazy(() => import('../pages/ReportComplaint'));
 const MyComplaints = lazy(() => import('../pages/MyComplaints'));
@@ -60,8 +63,16 @@ export const AppRoutes = () => {
       ),
     },
     {
+      path: '/unauthorized',
+      element: (
+        <Suspense fallback={<PageLoader />}>
+          <Unauthorized />
+        </Suspense>
+      ),
+    },
+    {
       path: '/citizen',
-      element: <ProtectedRoute allowedRoles={['citizen']} redirectPath="/login" />,
+      element: <ProtectedRoute allowedRoles={['citizen', 'admin']} redirectPath="/login" />,
       children: [
         {
           element: <CitizenLayout />,
@@ -98,13 +109,21 @@ export const AppRoutes = () => {
             </Suspense>
           ),
         },
+        {
+          path: 'profile',
+          element: (
+            <Suspense fallback={<PageLoader />}>
+              <CitizenProfile />
+            </Suspense>
+          ),
+        },
       ]
     }
   ]
 },
     {
       path: '/admin',
-      element: <ProtectedRoute allowedRoles={['admin']} redirectPath="/login" />,
+      element: <AdminRoute />,
       children: [
         {
           element: <AdminLayout />,

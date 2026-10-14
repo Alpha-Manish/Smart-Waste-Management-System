@@ -161,15 +161,15 @@ export function Sidebar({
             {isCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
           </button>
 
-          {/* User profile snippet (optional) */}
+          {/* User profile snippet */}
           {!isCollapsed && (
-            <div className="flex items-center gap-3 mt-4 px-3 md:hidden">
-              <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center">
-                <span className="text-sm font-bold text-slate-600">{profile.initials}</span>
+            <div className="flex items-center gap-3 mt-3 px-3 py-2 bg-slate-50 rounded-xl border border-slate-100">
+              <div className="w-9 h-9 rounded-full bg-teal-600 flex items-center justify-center text-white font-bold flex-shrink-0 shadow-sm">
+                <span className="text-xs font-bold">{profile.initials}</span>
               </div>
-              <div className="flex flex-col">
-                <span className="text-sm font-bold text-slate-800">{profile.name}</span>
-                <span className="text-xs text-slate-500">{profile.role}</span>
+              <div className="flex flex-col min-w-0 flex-1">
+                <span className="text-sm font-bold text-slate-800 truncate">{profile.name}</span>
+                <span className="text-[11px] text-slate-500 font-mono truncate" title={profile.role}>{profile.role}</span>
               </div>
             </div>
           )}

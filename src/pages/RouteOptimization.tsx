@@ -1,5 +1,5 @@
-import React from 'react';
-import { Truck, MapPin, Clock, CheckCircle2, AlertTriangle, TrendingUp, Map, Trash2, Route as RouteIcon, Sparkles, Zap, Info } from 'lucide-react';
+import { MapPin, Clock, CheckCircle2, AlertTriangle, Map, Trash2, Route as RouteIcon, Sparkles, Zap, Info } from 'lucide-react';
+
 
 const mockSummary = {
   totalBins: 245,

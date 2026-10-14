@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { isAuthorizedAdminEmail, AUTHORIZED_ADMIN_EMAIL } from '../utils/auth';
 
 export default function Register() {
   const [email, setEmail] = useState('');
@@ -10,41 +11,46 @@ export default function Register() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   
-  const { user, role: currentRole, isLoading } = useAuth();
+  const { user, isAdmin, isLoading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!isLoading && user) {
-      if (currentRole === 'admin') {
-        navigate('/admin');
+      if (isAdmin) {
+        navigate('/admin', { replace: true });
       } else {
-        navigate('/citizen');
+        navigate('/citizen', { replace: true });
       }
     }
-  }, [user, currentRole, isLoading, navigate]);
+  }, [user, isAdmin, isLoading, navigate]);
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
+      const cleanEmail = email.trim();
+      const isAuthorized = isAuthorizedAdminEmail(cleanEmail);
+      const assignedRole = isAuthorized ? 'admin' : 'citizen';
+
+      const { error } = await supabase.auth.signUp({
+        email: cleanEmail,
         password,
         options: {
           data: {
-            role,
+            role: assignedRole,
           }
         }
       });
 
       if (error) throw error;
 
-      // Auto redirect after successful registration
-      if (role === 'admin') {
-        navigate('/admin');
+      // Auto redirect after successful registration based on authorized email
+      if (isAuthorized) {
+        navigate('/admin', { replace: true });
       } else {
-        navigate('/citizen');
+        navigate('/citizen', { replace: true });
       }
     } catch (err: any) {
       setError(err.message || 'Failed to register');
@@ -52,6 +58,7 @@ export default function Register() {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -117,8 +124,14 @@ export default function Register() {
                   <span className="ml-2 text-sm text-gray-700">Admin</span>
                 </label>
               </div>
+              {role === 'admin' && !isAuthorizedAdminEmail(email) && (
+                <p className="text-xs text-amber-600 mt-2 bg-amber-50 p-2 rounded-lg border border-amber-200">
+                  Note: Administrative access is strictly restricted to <span className="font-mono font-medium">{AUTHORIZED_ADMIN_EMAIL}</span>. Other emails are automatically registered as Citizen.
+                </p>
+              )}
             </div>
           </div>
+
 
           <div>
             <button

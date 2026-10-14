@@ -1,11 +1,13 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { isAuthorizedAdminEmail } from '../utils/auth';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   role: 'citizen' | 'admin' | null;
+  isAdmin: boolean;
   isLoading: boolean;
   logout: () => Promise<void>;
 }
@@ -14,6 +16,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
   role: null,
+  isAdmin: false,
   isLoading: true,
   logout: async () => {},
 });
@@ -45,13 +48,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await supabase.auth.signOut();
   };
 
-  const role = user?.user_metadata?.role || 'citizen'; // Default to citizen if not set
+  const isAdmin = isAuthorizedAdminEmail(user?.email);
+  const role: 'citizen' | 'admin' | null = user ? (isAdmin ? 'admin' : 'citizen') : null;
 
   return (
-    <AuthContext.Provider value={{ user, session, role: user ? role : null, isLoading, logout }}>
+    <AuthContext.Provider value={{ user, session, role, isAdmin, isLoading, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
 export const useAuth = () => useContext(AuthContext);
+

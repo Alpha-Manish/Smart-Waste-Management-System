@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { 
-  Trash2, MapPin, Database, Calendar, AlertCircle, 
-  ArrowLeft, BatteryMedium, CheckCircle2, AlertTriangle, 
+  MapPin, Database, Calendar, AlertCircle, 
+  ArrowLeft, BatteryMedium, 
   History, Clock, Truck, Edit
 } from 'lucide-react';
-import { mockHistory } from '../data/mockBins'; // Keep mock history or remove it
 import { binService, type Bin as SmartBin } from '../services/binService';
 import { BinStatusBadge } from '../components/BinStatus';
 import { FillLevelProgress } from '../components/FillLevelProgress';
+
 
 const mockHistoryData = [
   { id: 1, date: '2023-10-15', time: '08:30 AM', truck: 'Truck-04', action: 'Waste Collected', by: 'Driver Smith' },
@@ -162,7 +162,7 @@ export default function BinDetails() {
             </h3>
             
             <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
-              {mockHistoryData.map((item, index) => (
+              {mockHistoryData.map((item) => (
                 <div key={item.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
                   {/* Timeline dot */}
                   <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-white bg-slate-100 text-slate-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">

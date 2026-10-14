@@ -6,12 +6,11 @@ import {
   Trash2, 
   BrainCircuit, 
   AlertTriangle, 
-  Battery, 
-  Clock, 
   TrendingUp, 
   Zap,
   CheckCircle2
 } from 'lucide-react';
+
 import { RiskLevelBadge } from '../components/RiskLevelBadge';
 import { 
   LineChart, 

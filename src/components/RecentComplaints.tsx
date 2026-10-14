@@ -1,5 +1,5 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
+
 import { type Complaint, type ComplaintStatus, MOCK_COMPLAINTS } from '../data/mockComplaints';
 import { Clock, AlertCircle, CheckCircle2, ChevronRight, FileWarning } from 'lucide-react';
 import { clsx } from 'clsx';

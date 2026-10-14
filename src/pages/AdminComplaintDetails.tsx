@@ -10,12 +10,14 @@ import {
   CheckCircle2, 
   AlignLeft,
   Image as ImageIcon,
-  User
+  Mail,
+  ShieldCheck
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { type ComplaintStatus } from '../data/mockComplaints';
 import { complaintService } from '../services/complaintService';
+import { extractReporterEmail, cleanDescription } from '../utils/complaints';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
@@ -40,6 +42,8 @@ export default function AdminComplaintDetails() {
       if (!id) return;
       try {
         const c = await complaintService.getComplaintById(id);
+        const signedImageUrl = await complaintService.getImageUrl(c.image_url);
+        
         setComplaint({
           id: c.id,
           title: c.title || 'Untitled Complaint',
@@ -47,8 +51,9 @@ export default function AdminComplaintDetails() {
           issueType: c.issue_type || 'Other',
           location: c.location,
           date: c.created_at || new Date().toISOString(),
-          imageUrl: c.image_url,
-          description: c.description,
+          imageUrl: signedImageUrl,
+          description: cleanDescription(c.description),
+          reporterEmail: extractReporterEmail(c.description, c.user_email),
           timeline: []
         });
       } catch (error) {
@@ -60,18 +65,21 @@ export default function AdminComplaintDetails() {
     fetchComplaint();
   }, [id]);
 
+
   const handleUpdateStatus = async (newStatus: ComplaintStatus) => {
     if (!complaint?.id) return;
     setIsUpdating(true);
     try {
       await complaintService.updateComplaintStatus(complaint.id, newStatus);
       setComplaint((prev: any) => ({ ...prev, status: newStatus }));
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to update status', error);
+      alert('Failed to update status: ' + (error?.message || 'Unknown error'));
     } finally {
       setIsUpdating(false);
     }
   };
+
 
   if (isLoading) {
     return (
@@ -167,10 +175,20 @@ export default function AdminComplaintDetails() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-1">
                   <span className="flex items-center gap-2 text-sm font-semibold text-slate-500">
-                    <User className="w-4 h-4" />
-                    Citizen Name
+                    <Mail className="w-4 h-4 text-teal-600" />
+                    Reported By (Citizen Email)
                   </span>
-                  <p className="text-slate-900 font-medium">Anonymous Citizen</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-slate-900 font-bold font-mono text-sm">
+                      {complaint.reporterEmail || 'Anonymous / Unregistered'}
+                    </p>
+                    {complaint.reporterEmail && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full">
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                        Verified Citizen
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="space-y-1">
                   <span className="flex items-center gap-2 text-sm font-semibold text-slate-500">
@@ -230,7 +248,7 @@ export default function AdminComplaintDetails() {
                   const Icon = step.icon;
                   
                   // Find timeline event if it exists
-                  const event = complaint.timeline?.find(e => e.status === step.status);
+                  const event = complaint.timeline?.find((e: any) => e.status === step.status);
 
                   return (
                     <div key={step.status} className="flex gap-4 relative z-10">

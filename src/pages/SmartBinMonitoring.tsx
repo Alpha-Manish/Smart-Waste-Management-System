@@ -1,14 +1,15 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Search, Filter, Plus, MapPin, Calendar, 
-  BatteryMedium, AlertTriangle, CheckCircle2,
+  BatteryMedium, AlertTriangle,
   LayoutGrid, List, Trash2
 } from 'lucide-react';
 import { binService, type Bin } from '../services/binService';
 import { type BinStatus } from '../data/mockBins';
 import { BinStatusBadge, getStatusFromPercentage } from '../components/BinStatus';
 import { FillLevelProgress } from '../components/FillLevelProgress';
+
 
 // --- Utility ---
 function classNames(...classes: (string | undefined | null | false)[]) {
@@ -37,9 +38,10 @@ export default function SmartBinMonitoring() {
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetchBins();
   }, []);
+
 
   const handleDeleteBin = async (id: string | undefined) => {
     if (!id || !window.confirm('Are you sure you want to delete this bin?')) return;

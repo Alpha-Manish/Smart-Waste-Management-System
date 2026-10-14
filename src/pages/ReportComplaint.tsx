@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { PageHeader } from '../components/ui/PageHeader';
 import { complaintService } from '../services/complaintService';
-import { UploadCloud, FileWarning, MapPin, AlignLeft, Type, AlertCircle } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { UploadCloud, FileWarning, MapPin, AlignLeft, Type, AlertCircle, UserCheck } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -10,7 +11,9 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 }
 
 export default function ReportComplaint() {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
+
     title: '',
     issueType: '',
     location: '',
@@ -39,6 +42,21 @@ export default function ReportComplaint() {
     
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const file = e.dataTransfer.files[0];
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setSubmitError("Image size must be less than 5MB");
+        return;
+      }
+      
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        setSubmitError("Only JPEG, PNG and WebP images are supported");
+        return;
+      }
+      
+      setSubmitError(null);
       setImage(file);
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
@@ -53,6 +71,21 @@ export default function ReportComplaint() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setSubmitError("Image size must be less than 5MB");
+        return;
+      }
+      
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        setSubmitError("Only JPEG, PNG and WebP images are supported");
+        return;
+      }
+      
+      setSubmitError(null);
       setImage(file);
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
@@ -81,12 +114,26 @@ export default function ReportComplaint() {
     setSubmitError(null);
     
     try {
+      let imageUrl = undefined;
+      
+      if (image) {
+        try {
+          imageUrl = await complaintService.uploadComplaintImage(image);
+        } catch (uploadError: any) {
+          throw new Error('Image upload failed: ' + (uploadError.message || 'Unknown error'));
+        }
+      }
+
+      const reporterEmail = user?.email;
+
       await complaintService.createComplaint({
         title: formData.title,
         issue_type: formData.issueType,
         location: formData.location,
         description: formData.description,
+        user_email: reporterEmail,
         status: 'Pending',
+        image_url: imageUrl,
       });
 
       setSubmitSuccess(true);
@@ -119,6 +166,19 @@ export default function ReportComplaint() {
         </div>
 
         <div className="p-6 md:p-8">
+          {user?.email && (
+            <div className="mb-6 bg-slate-50 border border-slate-200 rounded-xl p-3 px-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-700">
+              <div className="flex items-center gap-2">
+                <UserCheck className="w-4 h-4 text-teal-600 flex-shrink-0" />
+                <span>Reporting as: <strong className="font-mono text-slate-900">{user.email}</strong></span>
+              </div>
+              <span className="inline-flex items-center gap-1.5 self-start sm:self-auto bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full font-semibold border border-emerald-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                Active Citizen
+              </span>
+            </div>
+          )}
+
           {submitSuccess && (
             <div className="mb-6 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl p-4 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
               <AlertCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />
@@ -137,6 +197,7 @@ export default function ReportComplaint() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Title */}
               <div className="space-y-2 md:col-span-2">
+
                 <label htmlFor="title" className="block text-sm font-semibold text-slate-700">
                   Complaint Title <span className="text-red-500">*</span>
                 </label>

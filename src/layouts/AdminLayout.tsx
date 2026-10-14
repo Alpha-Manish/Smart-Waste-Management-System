@@ -1,12 +1,33 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, Navigate } from 'react-router-dom';
 import { Sidebar } from '../components/Sidebar';
 import { Bell, Search } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { UNAUTHORIZED_ADMIN_MESSAGE } from '../utils/auth';
 
 export function AdminLayout() {
+  const { user, isAdmin, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-teal-600 border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/unauthorized" state={{ unauthorizedMessage: UNAUTHORIZED_ADMIN_MESSAGE }} replace />;
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 flex">
       {/* Sidebar Component (Defaults to Admin items) */}
       <Sidebar />
+
 
       {/* Main Content Area */}
       <main className="flex-1 md:ml-64 transition-all duration-300">
