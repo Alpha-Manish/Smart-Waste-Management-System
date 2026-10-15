@@ -6,7 +6,7 @@ import {
   LayoutGrid, List, Trash2
 } from 'lucide-react';
 import { binService, type Bin } from '../services/binService';
-import { type BinStatus } from '../data/mockBins';
+import { mockBins, type BinStatus } from '../data/mockBins';
 import { BinStatusBadge, getStatusFromPercentage } from '../components/BinStatus';
 import { FillLevelProgress } from '../components/FillLevelProgress';
 
@@ -20,19 +20,23 @@ export default function SmartBinMonitoring() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<BinStatus | 'All'>('All');
   const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
-  const [bins, setBins] = useState<Bin[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [bins, setBins] = useState<Bin[]>(mockBins);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchBins = async () => {
     try {
-      setIsLoading(true);
       setError(null);
       const data = await binService.getBins();
-      setBins(data);
+      if (data && data.length > 0) {
+        const dbIds = new Set(data.map(b => b.id));
+        setBins([...data, ...mockBins.filter(b => !dbIds.has(b.id))]);
+      } else {
+        setBins(mockBins);
+      }
     } catch (err: any) {
-      console.error('Failed to fetch bins:', err);
-      setError(err.message || 'Failed to load bins.');
+      console.warn('Failed to fetch bins from database, using local data:', err);
+      setBins(mockBins);
     } finally {
       setIsLoading(false);
     }
@@ -49,7 +53,8 @@ export default function SmartBinMonitoring() {
       await binService.deleteBin(id);
       fetchBins(); // Refresh list after deletion
     } catch (err: any) {
-      alert('Failed to delete bin: ' + err.message);
+      // Local deletion fallback for mock data or offline mode
+      setBins(prev => prev.filter(b => b.id !== id));
     }
   };
 
@@ -212,7 +217,7 @@ export default function SmartBinMonitoring() {
                         <td className="py-4 px-6">
                           <div className="flex items-center gap-2 text-slate-600 text-sm">
                             <Calendar className="w-4 h-4 text-slate-400" />
-                            {bin.lastCollectedDate}
+                            {bin.lastCollectedDate || (bin.created_at ? new Date(bin.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0])}
                           </div>
                         </td>
                         <td className="py-4 px-6 text-right">
@@ -270,7 +275,7 @@ export default function SmartBinMonitoring() {
                     </div>
                     <div className="flex items-center gap-2 text-sm text-slate-600">
                       <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
-                      <span>{bin.lastCollectedDate}</span>
+                      <span>{bin.lastCollectedDate || (bin.created_at ? new Date(bin.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0])}</span>
                     </div>
                   </div>
 

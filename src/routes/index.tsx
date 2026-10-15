@@ -28,6 +28,7 @@ const AIPredictions = lazy(() => import('../pages/AIPredictions'));
 const PredictionDetails = lazy(() => import('../pages/PredictionDetails'));
 const RouteOptimization = lazy(() => import('../pages/RouteOptimization'));
 const SDGReports = lazy(() => import('../pages/SDGReports'));
+const AdminProfile = lazy(() => import('../pages/AdminProfile'));
 
 // Reusable loading fallback
 const PageLoader = () => (
@@ -224,7 +225,14 @@ export const AppRoutes = () => {
             </Suspense>
           ),
         },
-        // Note: Add other admin routes here in the future
+        {
+          path: 'profile',
+          element: (
+            <Suspense fallback={<PageLoader />}>
+              <AdminProfile />
+            </Suspense>
+          ),
+        },
       ]
     }
   ]

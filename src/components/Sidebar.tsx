@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, Link } from 'react-router-dom';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { 
@@ -15,9 +15,11 @@ import {
   Menu,
   X,
   Leaf,
-  LogOut
+  LogOut,
+  UserCog
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { getAuthorizedAdminEmail } from '../utils/auth';
 
 /** Utility for tailwind class merging */
 function cn(...inputs: ClassValue[]) {
@@ -44,18 +46,24 @@ const defaultAdminItems: MenuItem[] = [
   { name: 'AI Prediction', path: '/admin/predictions', icon: BrainCircuit },
   { name: 'Route Optimization', path: '/admin/routes', icon: RouteIcon },
   { name: 'SDG Reports', path: '/admin/sdg-report', icon: Globe2 },
+  { name: 'Admin Profile', path: '/admin/profile', icon: UserCog },
 ];
 
 export function Sidebar({ 
   items = defaultAdminItems,
-  profile = { name: 'Admin', role: 'System Manager', initials: 'AD' }
+  profile
 }: { 
   items?: MenuItem[],
   profile?: UserProfile
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
+
+  const adminName = user?.user_metadata?.name || localStorage.getItem('admin_name') || profile?.name || 'Admin';
+  const adminEmail = user?.email || localStorage.getItem('custom_admin_email') || getAuthorizedAdminEmail();
+  const adminRole = profile?.role || 'Super Administrator';
+  const adminInitials = adminName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() || 'AD';
 
   return (
     <>
@@ -163,15 +171,19 @@ export function Sidebar({
 
           {/* User profile snippet */}
           {!isCollapsed && (
-            <div className="flex items-center gap-3 mt-3 px-3 py-2 bg-slate-50 rounded-xl border border-slate-100">
+            <Link 
+              to="/admin/profile" 
+              className="flex items-center gap-3 mt-3 px-3 py-2 bg-slate-50 hover:bg-slate-100 transition-colors rounded-xl border border-slate-100 group"
+              title="View Admin Profile"
+            >
               <div className="w-9 h-9 rounded-full bg-teal-600 flex items-center justify-center text-white font-bold flex-shrink-0 shadow-sm">
-                <span className="text-xs font-bold">{profile.initials}</span>
+                <span className="text-xs font-bold">{adminInitials}</span>
               </div>
               <div className="flex flex-col min-w-0 flex-1">
-                <span className="text-sm font-bold text-slate-800 truncate">{profile.name}</span>
-                <span className="text-[11px] text-slate-500 font-mono truncate" title={profile.role}>{profile.role}</span>
+                <span className="text-sm font-bold text-slate-800 truncate group-hover:text-teal-700">{adminName}</span>
+                <span className="text-[11px] text-slate-500 font-mono truncate" title={adminEmail}>{adminRole}</span>
               </div>
-            </div>
+            </Link>
           )}
 
           {/* Logout Button */}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Trash2, MapPin, Database, Percent, Save, X, ArrowLeft, AlertCircle, AlertTriangle } from 'lucide-react';
+import { Trash2, MapPin, Database, Percent, Save, X, ArrowLeft, AlertCircle, AlertTriangle, Calendar } from 'lucide-react';
 import { binService } from '../services/binService';
 import { getStatusFromPercentage } from '../components/BinStatus';
 
@@ -12,7 +12,8 @@ export default function EditBin() {
     name: '',
     location: '',
     capacity: '120L',
-    fillPercentage: 0
+    fillPercentage: 0,
+    lastCollectedDate: ''
   });
   
   const [loading, setLoading] = useState(true);
@@ -31,7 +32,8 @@ export default function EditBin() {
             name: bin.name,
             location: bin.location,
             capacity: bin.capacity,
-            fillPercentage: bin.fillPercentage
+            fillPercentage: bin.fillPercentage,
+            lastCollectedDate: bin.lastCollectedDate || ((bin as any).created_at ? new Date((bin as any).created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0])
           });
         }
       } catch (err) {
@@ -55,7 +57,8 @@ export default function EditBin() {
         location: formData.location,
         capacity: formData.capacity,
         fillPercentage: formData.fillPercentage,
-        status: getStatusFromPercentage(formData.fillPercentage)
+        status: getStatusFromPercentage(formData.fillPercentage),
+        lastCollectedDate: formData.lastCollectedDate || new Date().toISOString().split('T')[0]
       });
       navigate('/admin/bins');
     } catch (err: any) {
@@ -196,6 +199,21 @@ export default function EditBin() {
                     max="100"
                     required
                     value={formData.fillPercentage}
+                    onChange={handleChange}
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Last Collected Date</label>
+                <div className="relative">
+                  <Calendar className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="date"
+                    name="lastCollectedDate"
+                    required
+                    value={formData.lastCollectedDate}
                     onChange={handleChange}
                     className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
                   />

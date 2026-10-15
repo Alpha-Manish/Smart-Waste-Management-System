@@ -13,7 +13,8 @@ import {
   CheckCircle2,
   Clock,
   AlertCircle,
-  FileWarning
+  FileWarning,
+  Edit3
 } from 'lucide-react';
 import { getComplaintCounts } from '../utils/analytics';
 import { clsx } from 'clsx';
@@ -212,7 +213,7 @@ export default function AdminComplaints() {
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto min-h-[380px]">
           <table className="w-full text-left text-sm text-slate-600">
             <thead className="text-xs text-slate-500 uppercase bg-slate-50/50 border-b border-slate-200">
               <tr>
@@ -236,7 +237,9 @@ export default function AdminComplaints() {
                   </td>
                 </tr>
               ) : currentComplaints.length > 0 ? (
-                currentComplaints.map((complaint) => (
+                currentComplaints.map((complaint, index) => {
+                  const isBottomRow = index >= currentComplaints.length - 2;
+                  return (
                   <tr key={complaint.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-6 py-4 font-medium text-slate-900">
                       {complaint.id}
@@ -267,61 +270,121 @@ export default function AdminComplaints() {
                       <StatusBadge status={complaint.status} />
                     </td>
                     <td className="px-6 py-4 text-center relative">
-                      <button 
-                        onClick={() => setOpenDropdownId(openDropdownId === complaint.id ? null : complaint.id)}
-                        className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
-                      >
-                        <MoreVertical className="w-5 h-5" />
+                      <div className="flex items-center justify-center gap-1">
+                        {/* Direct Quick Edit Button */}
+                        <button 
+                          onClick={() => navigate(`/admin/complaints/${complaint.id}`)}
+                          className="p-1.5 text-slate-400 hover:text-teal-600 rounded-lg hover:bg-teal-50 transition-colors"
+                          title="Edit Complaint"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
 
-                      </button>
+                        <button 
+                          onClick={() => setOpenDropdownId(openDropdownId === complaint.id ? null : complaint.id)}
+                          className={cn(
+                            "p-1.5 rounded-lg transition-colors",
+                            openDropdownId === complaint.id 
+                              ? "bg-teal-50 text-teal-600" 
+                              : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                          )}
+                          title="Actions & Status"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+                      </div>
                       
-                      {/* Actions Dropdown */}
+                      {/* Actions Dropdown with smart upward/downward positioning */}
                       {openDropdownId === complaint.id && (
                         <>
                           <div 
-                            className="fixed inset-0 z-10" 
+                            className="fixed inset-0 z-30" 
                             onClick={() => setOpenDropdownId(null)}
                           />
-                          <div className="absolute right-10 top-10 w-48 bg-white rounded-xl shadow-lg border border-slate-100 py-1 z-20 text-left">
+                          <div className={cn(
+                            "absolute right-6 w-52 bg-white rounded-2xl shadow-2xl border border-slate-200 py-2 z-40 text-left animate-in fade-in duration-150",
+                            isBottomRow ? "bottom-full mb-2 origin-bottom-right" : "top-full mt-2 origin-top-right"
+                          )}>
+                            <div className="px-3.5 py-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                              <Edit3 className="w-3.5 h-3.5 text-teal-600" />
+                              Manage Complaint
+                            </div>
+                            
                             <button 
-                              className="w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                              className="w-full px-3.5 py-2 text-sm font-semibold text-slate-700 hover:bg-teal-50/70 hover:text-teal-700 flex items-center gap-2.5 transition-colors"
                               onClick={() => {
                                 navigate(`/admin/complaints/${complaint.id}`);
                                 setOpenDropdownId(null);
                               }}
                             >
                               <Eye className="w-4 h-4 text-slate-400" />
-                              View Details
+                              Edit & View Details
                             </button>
-                            <div className="my-1 border-t border-slate-100" />
-                            <div className="px-4 py-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">Update Status</div>
+
+                            <div className="my-1.5 border-t border-slate-100" />
+                            <div className="px-3.5 py-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                              Update Status
+                            </div>
+
                             <button 
                               onClick={() => handleUpdateStatus(complaint.id, 'Pending')}
-                              className="w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                              className={cn(
+                                "w-full px-3.5 py-2 text-sm flex items-center justify-between transition-colors",
+                                complaint.status === 'Pending' 
+                                  ? "bg-amber-50 text-amber-800 font-bold" 
+                                  : "text-slate-700 hover:bg-slate-50"
+                              )}
                             >
-                              <Clock className="w-4 h-4 text-amber-500" />
-                              Mark Pending
+                              <div className="flex items-center gap-2">
+                                <Clock className="w-4 h-4 text-amber-500" />
+                                <span>Mark Pending</span>
+                              </div>
+                              {complaint.status === 'Pending' && (
+                                <span className="text-[10px] bg-amber-200/60 text-amber-900 px-1.5 py-0.5 rounded font-bold">Current</span>
+                              )}
                             </button>
+
                             <button 
                               onClick={() => handleUpdateStatus(complaint.id, 'In Progress')}
-                              className="w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                              className={cn(
+                                "w-full px-3.5 py-2 text-sm flex items-center justify-between transition-colors",
+                                complaint.status === 'In Progress' 
+                                  ? "bg-blue-50 text-blue-800 font-bold" 
+                                  : "text-slate-700 hover:bg-slate-50"
+                              )}
                             >
-                              <AlertCircle className="w-4 h-4 text-blue-500" />
-                              Mark In Progress
+                              <div className="flex items-center gap-2">
+                                <AlertCircle className="w-4 h-4 text-blue-500" />
+                                <span>Mark In Progress</span>
+                              </div>
+                              {complaint.status === 'In Progress' && (
+                                <span className="text-[10px] bg-blue-200/60 text-blue-900 px-1.5 py-0.5 rounded font-bold">Current</span>
+                              )}
                             </button>
+
                             <button 
                               onClick={() => handleUpdateStatus(complaint.id, 'Resolved')}
-                              className="w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                              className={cn(
+                                "w-full px-3.5 py-2 text-sm flex items-center justify-between transition-colors",
+                                complaint.status === 'Resolved' 
+                                  ? "bg-emerald-50 text-emerald-800 font-bold" 
+                                  : "text-slate-700 hover:bg-slate-50"
+                              )}
                             >
-                              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                              Mark Resolved
+                              <div className="flex items-center gap-2">
+                                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                                <span>Mark Resolved</span>
+                              </div>
+                              {complaint.status === 'Resolved' && (
+                                <span className="text-[10px] bg-emerald-200/60 text-emerald-900 px-1.5 py-0.5 rounded font-bold">Current</span>
+                              )}
                             </button>
                           </div>
                         </>
                       )}
                     </td>
                   </tr>
-                ))
+                );})
               ) : (
                 <tr>
                   <td colSpan={8} className="px-6 py-12 text-center text-slate-500">

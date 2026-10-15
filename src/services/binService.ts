@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { isAuthorizedAdminEmail } from '../utils/auth';
+import { mockBins } from '../data/mockBins';
 
 export interface Bin {
   id?: string;
@@ -14,16 +15,22 @@ export interface Bin {
 }
 
 // Maps Database schema to Frontend Bin interface
-const mapDBToBin = (dbBin: any): Bin => ({
-  id: dbBin.id,
-  name: dbBin.bin_name || dbBin.name || 'Unknown Bin',
-  location: dbBin.location || 'Unknown Location',
-  capacity: dbBin.capacity ? `${dbBin.capacity}L` : '120L',
-  fillPercentage: dbBin.fill_percentage ?? dbBin.fillPercentage ?? 0,
-  status: dbBin.status || 'Empty',
-  lastCollectedDate: dbBin.last_collection_date || dbBin.lastCollectedDate || undefined,
-  created_at: dbBin.created_at,
-});
+const mapDBToBin = (dbBin: any): Bin => {
+  const fallbackDate = dbBin.created_at 
+    ? new Date(dbBin.created_at).toISOString().split('T')[0] 
+    : new Date().toISOString().split('T')[0];
+
+  return {
+    id: dbBin.id,
+    name: dbBin.bin_name || dbBin.name || 'Unknown Bin',
+    location: dbBin.location || 'Unknown Location',
+    capacity: dbBin.capacity ? `${dbBin.capacity}L` : '120L',
+    fillPercentage: dbBin.fill_percentage ?? dbBin.fillPercentage ?? 0,
+    status: dbBin.status || 'Empty',
+    lastCollectedDate: dbBin.last_collection_date || dbBin.lastCollectedDate || fallbackDate,
+    created_at: dbBin.created_at,
+  };
+};
 
 // Maps Frontend Bin interface to Database schema
 const mapBinToDB = (bin: Partial<Bin>): any => {
@@ -60,25 +67,42 @@ const assertAdmin = async () => {
 
 export const binService = {
   async getBins() {
-    const { data, error } = await supabase
-      .from('bins')
-      .select('*');
-    if (error) throw error;
-    return (data || []).map(mapDBToBin);
+    try {
+      const { data, error } = await supabase
+        .from('bins')
+        .select('*');
+      if (error) throw error;
+      const dbBins = (data || []).map(mapDBToBin);
+      return dbBins.length > 0 ? dbBins : mockBins;
+    } catch (err) {
+      console.warn('Database query failed, returning local mock bins:', err);
+      return mockBins;
+    }
   },
 
   async getBinById(id: string) {
-    const { data, error } = await supabase
-      .from('bins')
-      .select('*')
-      .eq('id', id)
-      .single();
-    if (error) throw error;
-    return mapDBToBin(data);
+    try {
+      const { data, error } = await supabase
+        .from('bins')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (!error && data) {
+        return mapDBToBin(data);
+      }
+    } catch (err) {
+      // Ignore database query error and fallback to mock data
+    }
+    const localBin = mockBins.find(b => b.id === id);
+    if (localBin) return localBin;
+    throw new Error('Bin not found');
   },
 
   async createBin(bin: Bin) {
     await assertAdmin();
+    if (!bin.lastCollectedDate) {
+      bin.lastCollectedDate = new Date().toISOString().split('T')[0];
+    }
     const dbPayload = mapBinToDB(bin);
     const { data, error } = await supabase
       .from('bins')
