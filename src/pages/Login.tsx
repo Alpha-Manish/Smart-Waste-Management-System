@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { isAuthorizedAdminEmail } from '../utils/auth';
@@ -11,17 +11,26 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isAdmin, isLoading } = useAuth();
+  const requestedLocation = location.state?.from as {
+    pathname?: string;
+    search?: string;
+    hash?: string;
+  } | undefined;
+  const adminDestination = requestedLocation?.pathname?.startsWith('/admin')
+    ? `${requestedLocation.pathname}${requestedLocation.search ?? ''}${requestedLocation.hash ?? ''}`
+    : '/admin';
 
   useEffect(() => {
     if (!isLoading && user) {
       if (isAdmin) {
-        navigate('/admin', { replace: true });
+        navigate(adminDestination, { replace: true });
       } else {
         navigate('/citizen', { replace: true });
       }
     }
-  }, [user, isAdmin, isLoading, navigate]);
+  }, [user, isAdmin, isLoading, navigate, adminDestination]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +48,7 @@ export default function Login() {
 
       // Check strictly against authorized admin email
       if (isAuthorizedAdminEmail(data.user?.email)) {
-        navigate('/admin', { replace: true });
+        navigate(adminDestination, { replace: true });
       } else {
         navigate('/citizen', { replace: true });
       }

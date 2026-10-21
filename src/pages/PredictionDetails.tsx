@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 
 import { RiskLevelBadge } from '../components/RiskLevelBadge';
+import { mockBins } from '../data/mockBins';
 import { 
   LineChart, 
   Line,
@@ -55,14 +56,16 @@ const mockRecommendations = [
 export default function PredictionDetails() {
   const { id } = useParams();
 
-  // Mock data for the specific bin
+  // Mock data or lookup for the specific bin
   const binId = id || "BIN-089";
-  const binName = "Downtown Central Plaza";
-  const location = "Sector 4, Central District";
-  const currentFill = 70;
-  const predictedFullDate = "Today, 24:00";
-  const riskLevel: 'Critical' | 'High' | 'Medium' | 'Low' = "Critical";
-  const lastCollected = "Yesterday, 14:30";
+  const matchedBin = mockBins.find(b => b.id.toLowerCase() === binId.toLowerCase());
+  
+  const binName = matchedBin?.name || (binId === "BIN-089" ? "Downtown Central Plaza" : `Smart Waste Unit (${binId})`);
+  const location = matchedBin?.location || (binId === "BIN-089" ? "Sector 4, Central District" : "Metropolitan District Area");
+  const currentFill = matchedBin?.fillPercentage ?? 88;
+  const predictedFullDate = currentFill >= 90 ? "In 2 hours (Today, 16:00)" : currentFill >= 75 ? "Today, 21:00" : "Tomorrow, 14:00";
+  const riskLevel: 'Critical' | 'High' | 'Medium' | 'Low' = currentFill >= 90 ? 'Critical' : currentFill >= 75 ? 'High' : currentFill >= 50 ? 'Medium' : 'Low';
+  const lastCollected = matchedBin?.lastCollectedDate ? `${matchedBin.lastCollectedDate}, 09:30 AM` : "Yesterday, 14:30";
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-10">

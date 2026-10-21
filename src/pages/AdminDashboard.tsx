@@ -12,13 +12,129 @@ import {
   Printer, 
   FileSpreadsheet, 
   ChevronDown, 
-  Check 
+  Check,
+  BarChart3,
+  ArrowUpRight,
+  Activity
 } from 'lucide-react';
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ReferenceLine
+} from 'recharts';
 import { mockBins } from '../data/mockBins';
 import { getStatusFromPercentage } from '../components/BinStatus';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getAuthorizedAdminEmail } from '../utils/auth';
+
+type EfficiencyTimeframe = 'This Week' | 'This Month' | 'This Year';
+
+interface EfficiencyDataPoint {
+  label: string;
+  efficiency: number;
+  completed: number;
+  scheduled: number;
+  onTime: number;
+}
+
+const efficiencyDataByTimeframe: Record<EfficiencyTimeframe, {
+  avg: string;
+  trend: string;
+  trendPositive: boolean;
+  completed: string;
+  scheduled: string;
+  onTime: string;
+  data: EfficiencyDataPoint[];
+}> = {
+  'This Week': {
+    avg: '91.2%',
+    trend: '+4.8%',
+    trendPositive: true,
+    completed: '962',
+    scheduled: '1,040',
+    onTime: '95.4%',
+    data: [
+      { label: 'Mon', efficiency: 88, completed: 138, scheduled: 152, onTime: 92 },
+      { label: 'Tue', efficiency: 92, completed: 144, scheduled: 150, onTime: 95 },
+      { label: 'Wed', efficiency: 86, completed: 132, scheduled: 148, onTime: 90 },
+      { label: 'Thu', efficiency: 94, completed: 146, scheduled: 150, onTime: 96 },
+      { label: 'Fri', efficiency: 97, completed: 158, scheduled: 160, onTime: 98 },
+      { label: 'Sat', efficiency: 89, completed: 125, scheduled: 138, onTime: 94 },
+      { label: 'Sun', efficiency: 92, completed: 119, scheduled: 142, onTime: 93 },
+    ]
+  },
+  'This Month': {
+    avg: '89.6%',
+    trend: '+6.2%',
+    trendPositive: true,
+    completed: '3,840',
+    scheduled: '4,210',
+    onTime: '93.8%',
+    data: [
+      { label: 'Week 1', efficiency: 86, completed: 910, scheduled: 1020, onTime: 91 },
+      { label: 'Week 2', efficiency: 89, completed: 945, scheduled: 1040, onTime: 93 },
+      { label: 'Week 3', efficiency: 91, completed: 975, scheduled: 1050, onTime: 94 },
+      { label: 'Week 4', efficiency: 95, completed: 1010, scheduled: 1100, onTime: 97 },
+    ]
+  },
+  'This Year': {
+    avg: '92.4%',
+    trend: '+11.5%',
+    trendPositive: true,
+    completed: '46,280',
+    scheduled: '50,100',
+    onTime: '94.6%',
+    data: [
+      { label: 'Jan', efficiency: 84, completed: 3720, scheduled: 4100, onTime: 89 },
+      { label: 'Feb', efficiency: 86, completed: 3810, scheduled: 4150, onTime: 91 },
+      { label: 'Mar', efficiency: 89, completed: 3950, scheduled: 4200, onTime: 93 },
+      { label: 'Apr', efficiency: 91, completed: 4020, scheduled: 4250, onTime: 94 },
+      { label: 'May', efficiency: 93, completed: 4110, scheduled: 4300, onTime: 95 },
+      { label: 'Jun', efficiency: 94, completed: 4180, scheduled: 4320, onTime: 96 },
+      { label: 'Jul', efficiency: 92, completed: 4100, scheduled: 4310, onTime: 93 },
+      { label: 'Aug', efficiency: 95, completed: 4220, scheduled: 4330, onTime: 96 },
+      { label: 'Sep', efficiency: 96, completed: 4280, scheduled: 4350, onTime: 97 },
+      { label: 'Oct', efficiency: 94, completed: 4220, scheduled: 4340, onTime: 95 },
+    ]
+  }
+};
+
+const CustomEfficiencyTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload as EfficiencyDataPoint;
+    return (
+      <div className="bg-slate-900/95 backdrop-blur-md text-white p-3.5 rounded-xl shadow-xl border border-slate-700/60 text-xs min-w-[190px]">
+        <div className="font-semibold text-slate-200 border-b border-slate-700/80 pb-1.5 mb-2 flex items-center justify-between">
+          <span>{label}</span>
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-300 border border-teal-500/30">
+            {data.efficiency >= 90 ? 'Target Met' : 'Near Target'}
+          </span>
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-slate-400">Efficiency Score:</span>
+            <span className="font-bold text-teal-400 text-sm">{data.efficiency}%</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-slate-400">Bins Cleared:</span>
+            <span className="font-medium text-slate-200">{data.completed} / {data.scheduled}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-slate-400">Route Compliance:</span>
+            <span className="font-medium text-emerald-400">{data.onTime}%</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
 
 const adminStats = [
   {
@@ -63,7 +179,10 @@ export default function AdminDashboard() {
   const { user } = useAuth();
   const [isDownloadOpen, setIsDownloadOpen] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState<string | null>(null);
+  const [efficiencyTimeframe, setEfficiencyTimeframe] = useState<EfficiencyTimeframe>('This Week');
   const downloadRef = useRef<HTMLDivElement>(null);
+
+  const activeEfficiency = efficiencyDataByTimeframe[efficiencyTimeframe];
 
   const adminName = user?.user_metadata?.name || localStorage.getItem('admin_name') || 'System Administrator';
   const adminEmail = user?.email || localStorage.getItem('custom_admin_email') || getAuthorizedAdminEmail();
@@ -429,26 +548,137 @@ export default function AdminDashboard() {
 
       {/* Interactive Map / Chart Placeholders */}
       <div className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-6 min-h-[400px] flex flex-col">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-slate-900">Collection Efficiency</h2>
-            <select className="bg-slate-50 border border-slate-200 text-slate-700 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-teal-500">
-              <option>This Week</option>
-              <option>This Month</option>
-              <option>This Year</option>
-            </select>
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col justify-between">
+          <div>
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-teal-50 border border-teal-100/80 rounded-xl text-teal-600 shadow-xs">
+                  <BarChart3 className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-slate-900">Collection Efficiency</h2>
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                      Live Telemetry
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">Real-time route completion compliance & bin dispatch success rate</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <select 
+                  value={efficiencyTimeframe}
+                  onChange={(e) => setEfficiencyTimeframe(e.target.value as EfficiencyTimeframe)}
+                  className="bg-slate-50 border border-slate-200 text-slate-700 rounded-lg px-3 py-1.5 text-sm font-medium outline-none focus:ring-2 focus:ring-teal-500 transition-all cursor-pointer shadow-xs"
+                >
+                  <option value="This Week">This Week</option>
+                  <option value="This Month">This Month</option>
+                  <option value="This Year">This Year</option>
+                </select>
+
+                <Link 
+                  to="/admin/analytics" 
+                  className="inline-flex items-center gap-1.5 bg-teal-50 hover:bg-teal-100/80 text-teal-700 border border-teal-200/70 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shadow-xs"
+                  title="Open Detailed Analytics"
+                >
+                  <span>Analytics</span>
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </div>
+
+            {/* Quick Metrics Bar */}
+            <div className="grid grid-cols-3 gap-3 mb-5">
+              <div className="bg-slate-50/80 border border-slate-100 rounded-xl p-3">
+                <div className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">Avg Efficiency</div>
+                <div className="flex items-baseline gap-1.5 mt-1">
+                  <span className="text-xl font-bold text-slate-900">{activeEfficiency.avg}</span>
+                  <span className="text-xs font-semibold text-emerald-600 flex items-center">
+                    <TrendingUp className="w-3 h-3 mr-0.5" />
+                    {activeEfficiency.trend}
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-slate-50/80 border border-slate-100 rounded-xl p-3">
+                <div className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">Bins Picked / Sched</div>
+                <div className="flex items-baseline gap-1.5 mt-1">
+                  <span className="text-xl font-bold text-slate-900">{activeEfficiency.completed}</span>
+                  <span className="text-xs text-slate-500 font-medium">/ {activeEfficiency.scheduled}</span>
+                </div>
+              </div>
+
+              <div className="bg-slate-50/80 border border-slate-100 rounded-xl p-3">
+                <div className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">On-Time Route Rate</div>
+                <div className="flex items-baseline gap-1.5 mt-1">
+                  <span className="text-xl font-bold text-teal-600">{activeEfficiency.onTime}</span>
+                  <span className="text-[11px] text-slate-500 font-medium">Target 90%</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Interactive Chart */}
+            <div className="w-full h-64 sm:h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={activeEfficiency.data} margin={{ top: 12, right: 12, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="efficiencyGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#0d9488" stopOpacity={0.35}/>
+                      <stop offset="95%" stopColor="#0d9488" stopOpacity={0.0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis 
+                    dataKey="label" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#64748b', fontSize: 12 }} 
+                    dy={8} 
+                  />
+                  <YAxis 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#64748b', fontSize: 12 }} 
+                    domain={[60, 100]} 
+                    unit="%"
+                  />
+                  <Tooltip content={<CustomEfficiencyTooltip />} />
+                  <ReferenceLine 
+                    y={90} 
+                    stroke="#10b981" 
+                    strokeDasharray="4 4" 
+                    strokeWidth={1.5} 
+                    label={{ value: 'Target (90%)', fill: '#059669', fontSize: 11, position: 'insideTopRight' }} 
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="efficiency" 
+                    stroke="#0d9488" 
+                    strokeWidth={3} 
+                    fillOpacity={1} 
+                    fill="url(#efficiencyGradient)" 
+                    dot={{ r: 4, fill: '#0d9488', strokeWidth: 2, stroke: '#ffffff' }} 
+                    activeDot={{ r: 6, fill: '#0f766e', stroke: '#fff', strokeWidth: 2 }} 
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-          <div className="flex-1 bg-slate-50 rounded-xl flex flex-col items-center justify-center border border-dashed border-slate-200">
-            <div className="text-center text-slate-400 mb-4">
-              <BarChart3 className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p className="font-medium">Advanced Analytics Dashboard Available</p>
+
+          {/* Footer insight */}
+          <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-2">
+            <div className="flex items-center gap-2">
+              <Activity className="w-4 h-4 text-teal-600" />
+              <span>All 4 municipal logistics sectors operating above minimal threshold standard</span>
             </div>
             <Link 
               to="/admin/analytics" 
-              className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2 rounded-lg font-medium transition-colors shadow-sm flex items-center gap-2"
+              className="text-teal-600 hover:text-teal-700 font-semibold flex items-center gap-1 hover:underline"
             >
-              <TrendingUp className="w-4 h-4" />
-              View Full Analytics
+              Explore Full Analytics Report <ArrowUpRight className="w-3.5 h-3.5" />
             </Link>
           </div>
         </div>
@@ -483,6 +713,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
-// Ensure BarChart3 is imported since it's used in the placeholder
-import { BarChart3 } from 'lucide-react';

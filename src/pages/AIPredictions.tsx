@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   BrainCircuit, 
@@ -10,7 +11,9 @@ import {
   Calendar,
   Zap,
   Search,
-  Bell
+  Bell,
+  ChevronDown,
+  Check
 } from 'lucide-react';
 import { 
   XAxis, 
@@ -64,15 +67,14 @@ const predictionSummary = [
   }
 ];
 
-const predictionTrendData = [
-  { day: 'Mon', historical: 65, predicted: null },
-  { day: 'Tue', historical: 72, predicted: null },
-  { day: 'Wed', historical: 68, predicted: null },
-  { day: 'Thu', historical: 85, predicted: null },
-  { day: 'Fri', historical: 78, predicted: 78 }, // Connection point
-  { day: 'Sat', historical: null, predicted: 92 },
-  { day: 'Sun', historical: null, predicted: 88 },
-];
+export type PredictionTableRow = {
+  id: string;
+  name: string;
+  currentFill: number;
+  predictedFill: number;
+  predictedFullDate: string;
+  risk: RiskLevel;
+};
 
 type HighRiskBin = {
   id: string;
@@ -80,7 +82,7 @@ type HighRiskBin = {
   currentFill: number;
   predictedFill: number;
   riskLevel: RiskLevel;
-  riskScore: number; // For sorting
+  riskScore: number;
 };
 
 const highRiskBins: HighRiskBin[] = [
@@ -89,7 +91,6 @@ const highRiskBins: HighRiskBin[] = [
   { id: "BIN-055", location: "North Station", currentFill: 75, predictedFill: 90, riskLevel: "High" as RiskLevel, riskScore: 78 },
   { id: "BIN-012", location: "South Market", currentFill: 65, predictedFill: 80, riskLevel: "Medium" as RiskLevel, riskScore: 65 },
 ].sort((a, b) => b.riskScore - a.riskScore);
-
 
 const aiRecommendations = [
   {
@@ -118,26 +119,262 @@ const aiRecommendations = [
   }
 ];
 
-type PredictionTableRow = {
-  id: string;
-  name: string;
-  currentFill: number;
-  predictedFill: number;
-  predictedFullDate: string;
-  risk: RiskLevel;
-};
+type Timeframe = 'Next 12 Hours' | 'Next 24 Hours' | 'Next 48 Hours' | 'Next 7 Days';
 
-const predictionTable: PredictionTableRow[] = [
-  { id: "BIN-001", name: "Central Station Alpha", currentFill: 45, predictedFill: 85, predictedFullDate: "Tomorrow, 10:00 AM", risk: "Medium" },
-  { id: "BIN-002", name: "Market Square North", currentFill: 20, predictedFill: 35, predictedFullDate: "Oct 12, 02:00 PM", risk: "Low" },
-  { id: "BIN-003", name: "Industrial Zone B", currentFill: 80, predictedFill: 98, predictedFullDate: "Today, 4:00 PM", risk: "High" },
-  { id: "BIN-004", name: "University Campus East", currentFill: 60, predictedFill: 90, predictedFullDate: "Today, 8:00 PM", risk: "High" },
-  { id: "BIN-005", name: "City Mall Entrance", currentFill: 10, predictedFill: 15, predictedFullDate: "Oct 15, 09:00 AM", risk: "Low" },
-];
+const timeframeDatasets: Record<Timeframe, {
+  summary: typeof predictionSummary;
+  trendSubtitle: string;
+  trendData: Array<{ day: string; historical: number | null; predicted: number | null }>;
+  tableSubtitle: string;
+  tableData: PredictionTableRow[];
+}> = {
+  'Next 12 Hours': {
+    summary: [
+      {
+        title: "Total Bins Analyzed",
+        value: "1,248",
+        trend: "+12",
+        isPositive: true,
+        icon: Search,
+        color: "text-blue-500",
+        bg: "bg-blue-50"
+      },
+      {
+        title: "High Risk Bins",
+        value: "7",
+        trend: "-2",
+        isPositive: true,
+        icon: AlertTriangle,
+        color: "text-amber-500",
+        bg: "bg-amber-50"
+      },
+      {
+        title: "Predicted Overflows",
+        value: "2",
+        trend: "-1",
+        isPositive: true,
+        icon: TrendingUp,
+        color: "text-rose-500",
+        bg: "bg-rose-50"
+      },
+      {
+        title: "Collection Alerts",
+        value: "14",
+        trend: "+3",
+        isPositive: false,
+        icon: Bell,
+        color: "text-indigo-500",
+        bg: "bg-indigo-50"
+      }
+    ],
+    trendSubtitle: "12-Hour Hourly Trajectory & Peak Load Forecast",
+    trendData: [
+      { day: '02:00', historical: 45, predicted: null },
+      { day: '04:00', historical: 52, predicted: null },
+      { day: '06:00', historical: 58, predicted: null },
+      { day: '08:00', historical: 74, predicted: null },
+      { day: '10:00', historical: 79, predicted: 79 },
+      { day: '12:00', historical: null, predicted: 86 },
+      { day: '14:00', historical: null, predicted: 94 },
+    ],
+    tableSubtitle: "Next 12 hours imminent overflow warning forecast",
+    tableData: [
+      { id: "BIN-004", name: "Shopping Mall Plaza", currentFill: 98, predictedFill: 100, predictedFullDate: "In 2 hours, 03:00 PM", risk: "Critical" },
+      { id: "BIN-003", name: "Metro Station A", currentFill: 85, predictedFill: 94, predictedFullDate: "Today, 5:30 PM", risk: "High" },
+      { id: "BIN-007", name: "Central Library", currentFill: 75, predictedFill: 88, predictedFullDate: "Today, 8:00 PM", risk: "High" },
+      { id: "BIN-005", name: "High School Gate", currentFill: 60, predictedFill: 72, predictedFullDate: "Tonight, 11:00 PM", risk: "Medium" },
+      { id: "BIN-002", name: "City Park North", currentFill: 45, predictedFill: 54, predictedFullDate: "Tomorrow, 02:00 AM", risk: "Medium" },
+      { id: "BIN-001", name: "Downtown Main St", currentFill: 15, predictedFill: 24, predictedFullDate: "Tomorrow, 05:00 AM", risk: "Low" },
+    ]
+  },
+  'Next 24 Hours': {
+    summary: [
+      {
+        title: "Total Bins Analyzed",
+        value: "1,248",
+        trend: "+24",
+        isPositive: true,
+        icon: Search,
+        color: "text-blue-500",
+        bg: "bg-blue-50"
+      },
+      {
+        title: "High Risk Bins",
+        value: "12",
+        trend: "-3",
+        isPositive: true,
+        icon: AlertTriangle,
+        color: "text-amber-500",
+        bg: "bg-amber-50"
+      },
+      {
+        title: "Predicted Overflows",
+        value: "4",
+        trend: "-1",
+        isPositive: true,
+        icon: TrendingUp,
+        color: "text-rose-500",
+        bg: "bg-rose-50"
+      },
+      {
+        title: "Collection Alerts",
+        value: "28",
+        trend: "+5",
+        isPositive: false,
+        icon: Bell,
+        color: "text-indigo-500",
+        bg: "bg-indigo-50"
+      }
+    ],
+    trendSubtitle: "7-Day Historical vs Predicted Fill Levels",
+    trendData: [
+      { day: 'Mon', historical: 65, predicted: null },
+      { day: 'Tue', historical: 72, predicted: null },
+      { day: 'Wed', historical: 68, predicted: null },
+      { day: 'Thu', historical: 85, predicted: null },
+      { day: 'Fri', historical: 78, predicted: 78 },
+      { day: 'Sat', historical: null, predicted: 92 },
+      { day: 'Sun', historical: null, predicted: 88 },
+    ],
+    tableSubtitle: "Next 24 hours bin status forecast",
+    tableData: [
+      { id: "BIN-004", name: "Shopping Mall Plaza", currentFill: 98, predictedFill: 100, predictedFullDate: "Today, 4:00 PM", risk: "Critical" },
+      { id: "BIN-003", name: "Metro Station A", currentFill: 85, predictedFill: 96, predictedFullDate: "Today, 7:00 PM", risk: "High" },
+      { id: "BIN-007", name: "Central Library", currentFill: 75, predictedFill: 92, predictedFullDate: "Tomorrow, 10:00 AM", risk: "High" },
+      { id: "BIN-005", name: "High School Gate", currentFill: 60, predictedFill: 78, predictedFullDate: "Tomorrow, 2:00 PM", risk: "Medium" },
+      { id: "BIN-002", name: "City Park North", currentFill: 45, predictedFill: 62, predictedFullDate: "Oct 24, 11:00 AM", risk: "Medium" },
+      { id: "BIN-001", name: "Downtown Main St", currentFill: 15, predictedFill: 30, predictedFullDate: "Oct 26, 09:00 AM", risk: "Low" },
+    ]
+  },
+  'Next 48 Hours': {
+    summary: [
+      {
+        title: "Total Bins Analyzed",
+        value: "1,248",
+        trend: "+38",
+        isPositive: true,
+        icon: Search,
+        color: "text-blue-500",
+        bg: "bg-blue-50"
+      },
+      {
+        title: "High Risk Bins",
+        value: "19",
+        trend: "+4",
+        isPositive: false,
+        icon: AlertTriangle,
+        color: "text-amber-500",
+        bg: "bg-amber-50"
+      },
+      {
+        title: "Predicted Overflows",
+        value: "9",
+        trend: "+3",
+        isPositive: false,
+        icon: TrendingUp,
+        color: "text-rose-500",
+        bg: "bg-rose-50"
+      },
+      {
+        title: "Collection Alerts",
+        value: "42",
+        trend: "+12",
+        isPositive: false,
+        icon: Bell,
+        color: "text-indigo-500",
+        bg: "bg-indigo-50"
+      }
+    ],
+    trendSubtitle: "48-Hour Weekend Extended Forecast & Overflow Trajectory",
+    trendData: [
+      { day: 'Day 1 AM', historical: 68, predicted: null },
+      { day: 'Day 1 PM', historical: 79, predicted: null },
+      { day: 'Day 1 Night', historical: 84, predicted: 84 },
+      { day: 'Day 2 AM', historical: null, predicted: 89 },
+      { day: 'Day 2 Noon', historical: null, predicted: 94 },
+      { day: 'Day 2 PM', historical: null, predicted: 98 },
+      { day: 'Day 2 Night', historical: null, predicted: 91 },
+    ],
+    tableSubtitle: "Next 48 hours extended bin fill risk forecast",
+    tableData: [
+      { id: "BIN-004", name: "Shopping Mall Plaza", currentFill: 98, predictedFill: 100, predictedFullDate: "Today, 4:00 PM", risk: "Critical" },
+      { id: "BIN-003", name: "Metro Station A", currentFill: 85, predictedFill: 100, predictedFullDate: "Tomorrow, 8:00 AM", risk: "Critical" },
+      { id: "BIN-007", name: "Central Library", currentFill: 75, predictedFill: 96, predictedFullDate: "Tomorrow, 12:00 PM", risk: "High" },
+      { id: "BIN-009", name: "Industrial Park", currentFill: 92, predictedFill: 100, predictedFullDate: "Tomorrow, 3:00 PM", risk: "Critical" },
+      { id: "BIN-005", name: "High School Gate", currentFill: 60, predictedFill: 86, predictedFullDate: "Oct 23, 10:00 AM", risk: "High" },
+      { id: "BIN-002", name: "City Park North", currentFill: 45, predictedFill: 74, predictedFullDate: "Oct 23, 04:00 PM", risk: "Medium" },
+    ]
+  },
+  'Next 7 Days': {
+    summary: [
+      {
+        title: "Total Bins Analyzed",
+        value: "1,248",
+        trend: "+64",
+        isPositive: true,
+        icon: Search,
+        color: "text-blue-500",
+        bg: "bg-blue-50"
+      },
+      {
+        title: "High Risk Bins",
+        value: "26",
+        trend: "-8",
+        isPositive: true,
+        icon: AlertTriangle,
+        color: "text-amber-500",
+        bg: "bg-amber-50"
+      },
+      {
+        title: "Predicted Overflows",
+        value: "14",
+        trend: "-4",
+        isPositive: true,
+        icon: TrendingUp,
+        color: "text-rose-500",
+        bg: "bg-rose-50"
+      },
+      {
+        title: "Collection Alerts",
+        value: "68",
+        trend: "+9",
+        isPositive: false,
+        icon: Bell,
+        color: "text-indigo-500",
+        bg: "bg-indigo-50"
+      }
+    ],
+    trendSubtitle: "Weekly Trend & Municipal Dynamic Fill Projections",
+    trendData: [
+      { day: 'Week 1', historical: 62, predicted: null },
+      { day: 'Week 2', historical: 70, predicted: null },
+      { day: 'Week 3', historical: 68, predicted: null },
+      { day: 'Week 4', historical: 81, predicted: 81 },
+      { day: 'Week 5', historical: null, predicted: 87 },
+      { day: 'Week 6', historical: null, predicted: 92 },
+      { day: 'Week 7', historical: null, predicted: 86 },
+    ],
+    tableSubtitle: "Next 7 days long-term bin fill and maintenance forecast",
+    tableData: [
+      { id: "BIN-004", name: "Shopping Mall Plaza", currentFill: 98, predictedFill: 100, predictedFullDate: "Cycle 1: Oct 21", risk: "Critical" },
+      { id: "BIN-013", name: "Hospital West Wing", currentFill: 100, predictedFill: 100, predictedFullDate: "Cycle 1: Oct 22", risk: "Critical" },
+      { id: "BIN-009", name: "Industrial Park", currentFill: 92, predictedFill: 100, predictedFullDate: "Cycle 1: Oct 23", risk: "Critical" },
+      { id: "BIN-003", name: "Metro Station A", currentFill: 85, predictedFill: 98, predictedFullDate: "Cycle 2: Oct 24", risk: "High" },
+      { id: "BIN-007", name: "Central Library", currentFill: 75, predictedFill: 95, predictedFullDate: "Cycle 2: Oct 25", risk: "High" },
+      { id: "BIN-017", name: "Food Court Area", currentFill: 95, predictedFill: 100, predictedFullDate: "Cycle 2: Oct 26", risk: "Critical" },
+    ]
+  }
+};
 
 
 export default function AIPredictions() {
   const navigate = useNavigate();
+  const [selectedTimeframe, setSelectedTimeframe] = useState('Next 24 Hours');
+  const [isTimeframeOpen, setIsTimeframeOpen] = useState(false);
+
+  const timeframeOptions = ['Next 12 Hours', 'Next 24 Hours', 'Next 48 Hours', 'Next 7 Days'];
+
+  const currentData = timeframeDatasets[selectedTimeframe as Timeframe] || timeframeDatasets['Next 24 Hours'];
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -155,16 +392,51 @@ export default function AIPredictions() {
             <CheckCircle2 className="w-4 h-4" />
             Model Status: Active
           </div>
-          <div className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm">
-            <Calendar className="w-4 h-4" />
-            Next 24 Hours
+          
+          <div className="relative">
+            <button 
+              onClick={() => setIsTimeframeOpen(prev => !prev)}
+              className="px-4 py-2 bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-300 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm transition-colors cursor-pointer"
+            >
+              <Calendar className="w-4 h-4 text-indigo-600" />
+              <span>{selectedTimeframe}</span>
+              <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isTimeframeOpen ? 'rotate-180 text-indigo-600' : ''}`} />
+            </button>
+
+            {isTimeframeOpen && (
+              <>
+                <div 
+                  className="fixed inset-0 z-20" 
+                  onClick={() => setIsTimeframeOpen(false)} 
+                />
+                <div className="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-lg border border-slate-100 py-1.5 z-30">
+                  {timeframeOptions.map(option => (
+                    <button
+                      key={option}
+                      onClick={() => {
+                        setSelectedTimeframe(option);
+                        setIsTimeframeOpen(false);
+                      }}
+                      className={`w-full text-left px-3.5 py-2 text-xs font-medium flex items-center justify-between transition-colors ${
+                        selectedTimeframe === option 
+                          ? 'bg-indigo-50 text-indigo-700 font-semibold' 
+                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                      }`}
+                    >
+                      <span>{option}</span>
+                      {selectedTimeframe === option && <Check className="w-3.5 h-3.5 text-indigo-600" />}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {predictionSummary.map((stat, index) => (
+        {currentData.summary.map((stat, index) => (
           <div key={index} className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-shadow relative overflow-hidden group">
             <div className={`absolute top-0 right-0 w-24 h-24 ${stat.bg} rounded-bl-full -z-10 transition-transform group-hover:scale-110`} />
             <div className="flex justify-between items-start mb-4">
@@ -190,12 +462,12 @@ export default function AIPredictions() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-lg font-bold text-slate-800">Prediction Trend Chart</h2>
-              <p className="text-sm text-slate-500">7-Day Historical vs Predicted Fill Levels</p>
+              <p className="text-sm text-slate-500">{currentData.trendSubtitle}</p>
             </div>
           </div>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={predictionTrendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <LineChart data={currentData.trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                 <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
@@ -319,7 +591,7 @@ export default function AIPredictions() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-lg font-bold text-slate-800">Fill Level Predictions</h2>
-              <p className="text-sm text-slate-500">Next 24 hours bin status forecast</p>
+              <p className="text-sm text-slate-500">{currentData.tableSubtitle}</p>
             </div>
             <button className="text-sm font-medium text-indigo-600 hover:text-indigo-800">
               Export Report
@@ -338,7 +610,7 @@ export default function AIPredictions() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {predictionTable.map((row) => (
+                {currentData.tableData.map((row) => (
                   <tr 
                     key={row.id} 
                     onClick={() => navigate(`/admin/predictions/${row.id}`)}
